@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # The FastAPI REST Backend
+  api:
+    build: .
+    command: uvicorn oure.api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - SPACETRACK_USER=${SPACETRACK_USER}
+      - SPACETRACK_PASS=${SPACETRACK_PASS}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # The Celery Worker for heavy physics tasks
+  worker:
+    build: .
+    command: celery -A oure.api.tasks.celery_app worker --loglevel=info
+    environment:
+      - SPACETRACK_USER=${SPACETRACK_USER}
+      - SPACETRACK_PASS=${SPACETRACK_PASS}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Celery Beat for periodic tasks
+  celery-beat:
+    build: .
+    command: celery -A oure.api.celery_app beat --loglevel=info
+    environment:
+      - SPACETRACK_USER=${SPACETRACK_USER}
+      - SPACETRACK_PASS=${SPACETRACK_PASS}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - OURE_WATCHLIST_ASSETS=25544
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Redis Broker
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # Metrics: Prometheus
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+
+  # Visualizer: Grafana
+  grafana:
+    image: grafana/grafana:10.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    restart: unless-stopped

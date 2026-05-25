@@ -1,0 +1,154 @@
+"""
+OURE Uncertainty Modeling - Monte Carlo Propagator
+==================================================
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from datetime import datetime
+
+import numpy as np
+
+from oure.core.exceptions import CovarianceNotPositiveDefiniteError
+from oure.core.models import CovarianceMatrix, StateVector
+from oure.physics.base import BasePropagator
+
+logger = logging.getLogger("oure.uncertainty.monte_carlo")
+
+
+@dataclass
+class MonteCarloResult:
+    """Container for a completed Monte Carlo run."""
+
+    nominal_state: StateVector
+    ghost_states: list[StateVector]
+    sample_covariance: np.ndarray
+    n_samples: int
+    outlier_fraction: float
+
+
+class MonteCarloUncertaintyPropagator:
+    """
+    Generates N "ghost" satellite trajectories by sampling the initial
+    state distribution, propagating each, then reconstructing the
+    output covariance from the ensemble.
+    """
+
+    MAX_SAMPLES = 100_000
+
+    def __init__(
+        self,
+        propagator: BasePropagator,
+        n_samples: int = 1000,
+        random_seed: int | None = 42,
+    ):
+        if n_samples > self.MAX_SAMPLES:
+            logger.warning(
+                f"Requested {n_samples} samples exceeds cap. Clamping to {self.MAX_SAMPLES}."
+            )
+            n_samples = self.MAX_SAMPLES
+
+        self.propagator = propagator
+        self.n_samples = n_samples
+        self.rng = np.random.default_rng(random_seed)
+
+    def run(
+        self,
+        initial_state: StateVector,
+        initial_covariance: CovarianceMatrix,
+        target_epoch: datetime,
+    ) -> MonteCarloResult:
+        """
+        Execute Monte Carlo propagation.
+        """
+        p0 = initial_covariance.matrix
+        x0 = initial_state.state_vector_6d
+
+        try:
+            l_matrix = np.linalg.cholesky(p0)
+        except np.linalg.LinAlgError:
+            logger.warning("Covariance not positive definite — adding regularisation")
+            p0_reg = p0 + np.eye(6) * 1e-12
+            try:
+                l_matrix = np.linalg.cholesky(p0_reg)
+            except np.linalg.LinAlgError:
+                raise CovarianceNotPositiveDefiniteError(
+                    "Failed to regularize non-positive definite covariance matrix."
+                )
+
+        xi = self.rng.standard_normal((self.n_samples, 6))
+        perturbations = (l_matrix @ xi.T).T
+        samples_x0 = x0 + perturbations
+
+        logger.info(
+            f"Propagating {self.n_samples} Monte Carlo samples to {target_epoch}"
+        )
+
+        # Parallelized propagation
+        import os
+        from concurrent.futures import ThreadPoolExecutor
+
+        # Determine chunk size and workers
+        n_workers = min(os.cpu_count() or 1, 8)
+        chunk_size = max(1, self.n_samples // n_workers)
+
+        chunks = [
+            samples_x0[i : i + chunk_size] for i in range(0, self.n_samples, chunk_size)
+        ]
+
+        all_ghost_vecs = []
+        with ThreadPoolExecutor(max_workers=n_workers) as executor:
+            futures = [
+                executor.submit(
+                    self.propagator.propagate_many_to,
+                    chunk,
+                    initial_state.epoch,
+                    target_epoch,
+                )
+                for chunk in chunks
+            ]
+            for future in futures:
+                all_ghost_vecs.append(future.result())
+
+        ghost_vecs = np.vstack(all_ghost_vecs)
+
+        # Convert the propagated vectors back to StateVector objects (if needed for return)
+        ghost_states = [
+            StateVector.from_6d(
+                vec, target_epoch, f"{initial_state.sat_id}_ghost_{i:04d}"
+            )
+            for i, vec in enumerate(ghost_vecs)
+        ]
+
+        x_mean = ghost_vecs.mean(axis=0)
+        delta = ghost_vecs - x_mean
+        p_mc = (delta.T @ delta) / (self.n_samples - 1)
+
+        p_inv = np.linalg.pinv(p_mc)
+        from scipy.stats import chi2
+
+        # 3-sigma (99.73%) threshold for 6 degrees of freedom
+        threshold = chi2.ppf(0.9973, df=6)  # ~22.46
+
+        # Vectorized Mahalanobis distance calculation
+        distances = np.einsum("ij,jk,ik->i", delta, p_inv, delta)
+        outlier_frac = float(np.mean(distances > threshold))
+
+        nominal_propagated = StateVector.from_6d(
+            x_mean, target_epoch, initial_state.sat_id
+        )
+
+        logger.info(
+            f"MC complete | outlier_frac={outlier_frac:.2%} | "
+            f"σ_along-track≈{np.sqrt(p_mc[1, 1]):.3f} km"
+        )
+
+        return MonteCarloResult(
+            nominal_state=nominal_propagated,
+            ghost_states=ghost_states,
+            sample_covariance=p_mc,
+            n_samples=self.n_samples,
+            outlier_fraction=outlier_frac,
+        )

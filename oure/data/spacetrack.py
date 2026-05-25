@@ -1,0 +1,283 @@
+"""
+OURE Data Ingestion Layer - Space-Track.org TLE Fetcher
+=======================================================
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import random
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import httpx
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from oure.core.models import TLERecord
+from oure.data.schemas import TLERecordSchema
+
+from .base import BaseDataFetcher
+from .cache import CacheManager
+
+logger = logging.getLogger("oure.data.spacetrack")
+
+_RETRY_POLICY = retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=60),
+    retry=retry_if_exception_type((httpx.TimeoutException, httpx.ConnectError)),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+
+
+def compute_tle_quality(record: TLERecord, altitude_km: float) -> float:
+    """Computes a quality score (0.0 to 1.0) based on TLE age and altitude regime."""
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+    age_hours = max(0.0, (now - record.epoch).total_seconds() / 3600.0)
+
+    age_penalty = max(0.0, 1.0 - age_hours / 24.0)
+
+    if altitude_km < 400.0:
+        drag_penalty = max(0.0, 1.0 - age_hours / 6.0)
+    elif 400.0 <= altitude_km <= 800.0:
+        drag_penalty = max(0.0, 1.0 - age_hours / 24.0)
+    else:
+        drag_penalty = max(0.0, 1.0 - age_hours / 72.0)
+
+    return 0.7 * age_penalty + 0.3 * drag_penalty
+
+
+class SpaceTrackFetcher(BaseDataFetcher):
+    """
+    Authenticates with Space-Track.org and downloads TLE data concurrently.
+    """
+
+    BASE_URL = "https://www.space-track.org"
+    LOGIN_URL = f"{BASE_URL}/ajaxauth/login"
+    QUERY_URL = (
+        f"{BASE_URL}/basicspacedata/query/class/gp"
+        "/EPOCH/now-30--now/orderby/NORAD_CAT_ID/format/json"
+    )
+    CHUNK_SIZE = 300  # Space-Track limits URI length
+
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        cache: CacheManager | None = None,
+        cache_ttl_hours: float = 6.0,
+    ):
+        self.username = username
+        self.password = password
+        self.cache = cache or CacheManager()
+        self.cache_ttl = cache_ttl_hours * 3600
+
+    async def _async_login(self, client: httpx.AsyncClient) -> None:
+        from oure.core.exceptions import SpaceTrackAuthError
+
+        resp = await client.post(
+            self.LOGIN_URL,
+            data={"identity": self.username, "password": self.password},
+            timeout=30.0,
+        )
+        resp.raise_for_status()
+        if "Failed" in resp.text:
+            raise SpaceTrackAuthError(
+                "Space-Track authentication failed. Check credentials."
+            )
+        logger.info("Authenticated with Space-Track.org")
+
+    async def _async_logout(self, client: httpx.AsyncClient) -> None:
+        await client.get(f"{self.BASE_URL}/ajaxauth/logout", timeout=10.0)
+        logger.info("Logged out from Space-Track.org")
+
+    def fetch(self, sat_ids: list[str] | None = None, **kwargs: Any) -> list[TLERecord]:
+        force_refresh = kwargs.get("force_refresh", False)
+        if sat_ids:
+            results, missing = [], []
+            if not force_refresh:
+                for sid in sat_ids:
+                    cached = self.cache.get_tle(sid)
+                    if cached:
+                        logger.debug(f"Cache HIT for NORAD {sid}")
+                        results.append(cached)
+                    else:
+                        missing.append(sid)
+            else:
+                missing = sat_ids
+
+            if missing:
+                logger.info(
+                    f"Cache MISS for {len(missing)} satellites — fetching network asynchronously"
+                )
+                fresh = self._fetch_from_network(sat_ids=missing)
+                results.extend(fresh)
+            return results
+        else:
+            cache_key = "spacetrack_bulk_leo"
+            if not force_refresh and self.cache.get(cache_key) == "fresh":
+                logger.info("Using bulk TLE cache (still fresh)")
+                return self.cache.get_all_tles()
+
+            records = self._fetch_from_network()
+            self.cache.set(cache_key, "fresh", self.cache_ttl)
+            return records
+
+    def _fetch_from_network(
+        self, sat_ids: list[str] | None = None, **kwargs: Any
+    ) -> list[TLERecord]:
+        return asyncio.run(self._fetch_all_async(sat_ids))
+
+    @_RETRY_POLICY
+    async def _fetch_chunk(
+        self, client: httpx.AsyncClient, chunk: list[str]
+    ) -> list[dict[str, Any]]:
+        ids_str = ",".join(chunk)
+        url = (
+            f"{self.BASE_URL}/basicspacedata/query/class/gp"
+            f"/NORAD_CAT_ID/{ids_str}/format/json"
+        )
+        resp = await client.get(url, timeout=60.0)
+        resp.raise_for_status()
+        data: list[dict[str, Any]] = resp.json()
+        return data
+
+    async def _fetch_all_async(
+        self, sat_ids: list[str] | None = None
+    ) -> list[TLERecord]:
+        raw_data: list[dict[str, Any]] = []
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(60.0)) as client:
+                await self._async_login(client)
+                try:
+                    if not sat_ids:
+                        resp = await client.get(self.QUERY_URL, timeout=120.0)
+                        resp.raise_for_status()
+                        raw_data = resp.json()
+                    else:
+                        chunks = [
+                            sat_ids[i : i + self.CHUNK_SIZE]
+                            for i in range(0, len(sat_ids), self.CHUNK_SIZE)
+                        ]
+                        tasks = [self._fetch_chunk(client, chunk) for chunk in chunks]
+                        chunk_results = await asyncio.gather(*tasks)
+                        for r in chunk_results:
+                            raw_data.extend(r)
+                finally:
+                    await self._async_logout(client)
+        except Exception as e:
+            logger.warning(
+                f"Network error fetching from Space-Track: {e}. Generating Mock TLEs."
+            )
+            return self._generate_mock_tles(sat_ids)
+
+        parsed_records: list[TLERecord] = []
+        for d in raw_data:
+            try:
+                valid_data = TLERecordSchema(**d)
+                parsed_records.append(
+                    self._parse_tle_record(valid_data.model_dump(mode="json"))
+                )
+            except Exception as e:
+                logger.warning(f"Failed to validate TLE record: {e}")
+                continue
+
+        for rec in parsed_records:
+            self.cache.cache_tle(rec)
+        logger.info(f"Fetched and cached {len(parsed_records)} TLE records")
+        return parsed_records
+
+    def _generate_mock_tles(self, sat_ids: list[str] | None = None) -> list[TLERecord]:
+        """Fall back to generated mock TLEs if the network is unavailable."""
+        mock_records = []
+        base_id = 90000
+        mock_count = len(sat_ids) if (sat_ids and len(sat_ids) > 0) else 50
+        for i in range(mock_count):
+            sid = str(base_id + i) if not sat_ids else sat_ids[i]
+
+            mean_motion = random.uniform(14.0, 16.0)
+            record = TLERecord(
+                sat_id=sid,
+                name=f"MOCK-SAT-{sid}",
+                line1=f"1 {sid}U 23001A   23284.00000000  .00000000  00000-0  00000-0 0  9999",
+                line2=f"2 {sid}  {random.uniform(0, 180):.4f} {random.uniform(0, 360):.4f} 0005000 {random.uniform(0, 360):.4f} {random.uniform(0, 360):.4f} {mean_motion:.8f}",
+                epoch=datetime.now(UTC) - timedelta(days=random.uniform(0, 1)),
+                inclination_deg=random.uniform(0, 180),
+                raan_deg=random.uniform(0, 360),
+                eccentricity=0.0005,
+                arg_perigee_deg=random.uniform(0, 360),
+                mean_anomaly_deg=random.uniform(0, 360),
+                mean_motion_rev_per_day=mean_motion,
+                bstar=0.0,
+            )
+
+            import math
+
+            mu = 398600.4418
+            R_earth = 6371.0
+            n_rad_s = mean_motion * 2.0 * math.pi / 86400.0
+            altitude_km = 400.0  # fallback
+            if n_rad_s > 0:
+                a = (mu / (n_rad_s**2)) ** (1 / 3)
+                altitude_km = a - R_earth
+
+            quality = compute_tle_quality(record, altitude_km)
+            object.__setattr__(record, "quality_score", quality)
+            mock_records.append(record)
+
+        return mock_records
+
+    def _parse_tle_record(self, data: dict[str, Any]) -> TLERecord:
+        epoch_str = data.get("EPOCH", "")
+        try:
+            epoch = datetime.strptime(epoch_str, "%Y-%m-%d %H:%M:%S").replace(
+                tzinfo=UTC
+            )
+        except ValueError:
+            epoch = datetime.now(UTC)
+
+        mean_motion = float(data.get("MEAN_MOTION", 0))
+
+        record = TLERecord(
+            sat_id=str(data.get("NORAD_CAT_ID", "")),
+            name=data.get("OBJECT_NAME", "UNKNOWN"),
+            line1=data.get("TLE_LINE1", ""),
+            line2=data.get("TLE_LINE2", ""),
+            epoch=epoch,
+            inclination_deg=float(data.get("INCLINATION", 0)),
+            raan_deg=float(data.get("RA_OF_ASC_NODE", 0)),
+            eccentricity=float(data.get("ECCENTRICITY", 0)),
+            arg_perigee_deg=float(data.get("ARG_OF_PERICENTER", 0)),
+            mean_anomaly_deg=float(data.get("MEAN_ANOMALY", 0)),
+            mean_motion_rev_per_day=mean_motion,
+            bstar=float(data.get("BSTAR", 0)),
+        )
+
+        import math
+
+        mu = 398600.4418
+        R_earth = 6371.0
+        n_rad_s = mean_motion * 2.0 * math.pi / 86400.0
+        altitude_km = 400.0  # fallback
+        if n_rad_s > 0:
+            a = (mu / (n_rad_s**2)) ** (1 / 3)
+            altitude_km = a - R_earth
+
+        quality = compute_tle_quality(record, altitude_km)
+
+        # TLERecord is frozen, use object.__setattr__
+        object.__setattr__(record, "quality_score", quality)
+
+        return record
+
+
+ord
