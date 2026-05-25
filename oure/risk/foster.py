@@ -1,0 +1,140 @@
+"""
+OURE Risk Calculation - Foster's Algorithm
+==========================================
+"""
+
+from __future__ import annotations
+
+from enum import Enum
+from math import exp, pi, sqrt
+
+import numpy as np
+from scipy.integrate import dblquad
+from scipy.special import gammainc
+
+
+class PcMethod(str, Enum):
+    NUMERICAL = "numerical"
+    FOSTER_SERIES = "series"
+    MONTE_CARLO = "monte_carlo"
+
+
+class MonteCarloSampler:
+    """Fallback 2D Monte Carlo integrator on the B-plane."""
+
+    @staticmethod
+    def compute_pc(
+        b_miss: np.ndarray, C_2d: np.ndarray, R_km: float, n_samples: int = 100000
+    ) -> float:
+        rng = np.random.default_rng(seed=42)
+        samples = rng.multivariate_normal(b_miss, C_2d, n_samples)
+        dists = np.linalg.norm(samples, axis=1)
+        collisions = np.sum(dists < R_km)
+        return float(collisions / n_samples)
+
+
+class FosterPcCalculator:
+    """
+    Probability of Collision via Foster's 2D B-plane integral.
+    """
+
+    def __init__(
+        self,
+        hard_body_radius_km: float,
+        method: PcMethod = PcMethod.NUMERICAL,
+        integration_sigma: float = 5.0,
+        series_terms: int = 5,
+        use_mc_fallback: bool = True,
+    ):
+        self.R = hard_body_radius_km
+        self.method = method
+        self.integration_sigma = integration_sigma
+        self.series_terms = series_terms
+        self.use_mc_fallback = use_mc_fallback
+
+    def compute(
+        self, b_miss: np.ndarray, C_2d: np.ndarray, propagation_age_hours: float = 0.0
+    ) -> float:
+        """
+        Computes the Probability of Collision (Pc).
+        """
+        import logging
+
+        logger = logging.getLogger("oure.risk.foster")
+
+        miss_distance = np.linalg.norm(b_miss)
+        if self.use_mc_fallback and (
+            propagation_age_hours > 8.0 or miss_distance < 3.0 * self.R
+        ):
+            logger.debug("FosterPcCalculator: Using MONTE_CARLO fallback.")
+            self.method = PcMethod.MONTE_CARLO
+            return MonteCarloSampler.compute_pc(b_miss, C_2d, self.R)
+
+        if self.method == PcMethod.NUMERICAL:
+            logger.debug("FosterPcCalculator: Using NUMERICAL method.")
+            return self._numerical_integration(b_miss, C_2d)
+        else:
+            logger.debug("FosterPcCalculator: Using FOSTER_SERIES method.")
+            return self._foster_series(b_miss, C_2d)
+
+    def _numerical_integration(self, b: np.ndarray, C: np.ndarray) -> float:
+        C_inv = np.linalg.pinv(C)
+        det_C = np.linalg.det(C)
+        if det_C <= 0:
+            return 0.0
+        norm_factor = 1.0 / (2 * pi * sqrt(det_C))
+        R_sq = self.R**2
+
+        def integrand(zeta: float, xi: float) -> float:
+            if xi**2 + zeta**2 > R_sq:
+                return 0.0
+            u = np.array([xi - b[0], zeta - b[1]])
+            return norm_factor * exp(-0.5 * u @ C_inv @ u)
+
+        sigma_x = sqrt(C[0, 0])
+        sigma_z = sqrt(C[1, 1])
+        xi_lo = -self.integration_sigma * sigma_x
+        xi_hi = self.integration_sigma * sigma_x
+
+        result, _ = dblquad(
+            integrand,
+            xi_lo,
+            xi_hi,
+            lambda xi: -self.integration_sigma * sigma_z,
+            lambda xi: self.integration_sigma * sigma_z,
+            epsabs=1e-12,
+            epsrel=1e-8,
+        )
+        return float(np.clip(result, 0.0, 1.0))
+
+    def _foster_series(self, b: np.ndarray, C: np.ndarray) -> float:
+        eigenvalues, _ = np.linalg.eigh(C)
+        # Ensure eigenvalues are positive and non-zero
+        lam1, lam2 = sorted(np.abs(eigenvalues) + 1e-15)  # lam1=min, lam2=max
+
+        # u = 1/2 * b^T * C^-1 * b (Half of Mahalanobis distance squared)
+        C_inv = np.linalg.pinv(C)
+        u = 0.5 * float(b @ C_inv @ b)
+        u = max(u, 1e-12)  # Clamp u to prevent log(0) and truncation at n=0
+
+        # v = R^2 / (2 * sqrt(det(C)))
+        # This parameter represents the scaled collision disk size
+        v = self.R**2 / (2 * np.sqrt(lam1 * lam2))
+
+        pc = 0.0
+
+        # Foster (1992) eq. 14; validated against Alfriend (2009) Table 5.1
+        # Iteratively calculate the Poisson-weighted sum of incomplete gamma terms
+        for n in range(self.series_terms):
+            from math import lgamma
+
+            # Using log-space for numerical stability of (e^-u * u^n / n!)
+            log_weight = -u + n * np.log(u) - lgamma(n + 1)
+            weight = exp(log_weight)
+
+            # gammainc(a, x) is the regularized lower incomplete gamma function
+            gamma_term = gammainc(n + 1, v)
+            pc += weight * gamma_term
+
+        # Summation is already the probability, no further normalization needed
+        return float(np.clip(pc, 0, 1))
