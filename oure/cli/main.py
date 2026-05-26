@@ -112,6 +112,14 @@ from . import (  # noqa: F401
     cmd_sensor,
     cmd_shatter,
 )
+from .tui import launch_tui
+
+
+@cli.command("tui")
+def tui_cmd() -> None:
+    """Launch the interactive Terminal User Interface (TUI) Dashboard."""
+    launch_tui()
+
 
 if __name__ == "__main__":
     cli(auto_envvar_prefix="OURE")
