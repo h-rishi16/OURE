@@ -5,7 +5,29 @@ OURE Command-Line Interface - Main Entry Point
 
 from pathlib import Path
 
-import click
+import rich_click as click
+
+# Configure rich-click
+click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.USE_MARKDOWN = True
+click.rich_click.SHOW_ARGUMENTS = True
+click.rich_click.GROUP_ARGUMENTS_OPTIONS = True
+click.rich_click.STYLE_ERRORS_SUGGESTION = "magenta italic"
+click.rich_click.ERRORS_SUGGESTION = "Try running '--help' for more information."
+click.rich_click.ERRORS_EPILOGUE = (
+    "To find out more, visit https://github.com/h-rishi16/oure"
+)
+click.rich_click.HEADER_TEXT = """[cyan]
+  ██████╗ ██╗   ██╗██████╗ ███████╗
+ ██╔═══██╗██║   ██║██╔══██╗██╔════╝
+ ██║   ██║██║   ██║██████╔╝█████╗
+ ██║   ██║██║   ██║██╔══██╗██╔══╝
+ ╚██████╔╝╚██████╔╝██║  ██║███████╗
+  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝[/cyan]
+
+[bold]Orbital Uncertainty & Risk Engine[/bold]
+Satellite Collision Probability Solver for Space Situational Awareness.
+"""
 
 from oure.core.logging_config import LogFormat, configure_logging
 from oure.data.cache import CacheManager
@@ -69,12 +91,7 @@ def cli(
     verbose: bool,
     log_file: str | None,
 ) -> None:
-    """
-    ╔══════════════════════════════════════════════╗
-    ║   OURE --- Orbital Uncertainty & Risk Engine   ║
-    ║    Satellite Collision Probability Solver    ║
-    ╚══════════════════════════════════════════════╝
-    """
+    """Main CLI Entry Point."""
     import os
 
     fmt = (
