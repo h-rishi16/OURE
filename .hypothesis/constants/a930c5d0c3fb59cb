@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/cli/cmd_export.py
+# hypothesis_version: 6.151.10
+
+[-7.5, 1.0, 7.5, 10.0, 7000.0, 7000.5, '--event-id', '--include-maneuver', '--output', '25544', 'Output path for CDM.', 'Output path for PDF.', 'generate-cdm', 'report-event']

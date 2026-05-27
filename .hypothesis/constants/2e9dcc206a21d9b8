@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/cli/cmd_auth.py
+# hypothesis_version: 6.151.10
+
+['--label', '--rate-limit', 'CELERY_BROKER_URL']

@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/physics/factory.py
+# hypothesis_version: 6.151.10
+
+[1.2, 2.2, 4.0, 10.0, 500.0, 'oure.physics.factory']

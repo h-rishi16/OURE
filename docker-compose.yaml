@@ -1,12 +1,9 @@
-version: '3.8'
 
 services:
   # The FastAPI REST Backend
   api:
     build: .
     command: uvicorn oure.api.main:app --host 0.0.0.0 --port 8000
-    ports:
-      - "8000:8000"
     environment:
       - SPACETRACK_USER=${SPACETRACK_USER}
       - SPACETRACK_PASS=${SPACETRACK_PASS}
@@ -46,8 +43,6 @@ services:
   # Redis Broker
   redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -58,8 +53,9 @@ services:
   # Metrics: Prometheus
   prometheus:
     image: prom/prometheus:v2.48.0
-    ports:
-      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=/prometheus'
     volumes:
       - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: unless-stopped
@@ -67,10 +63,23 @@ services:
   # Visualizer: Grafana
   grafana:
     image: grafana/grafana:10.2.0
-    ports:
-      - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_ROOT_URL=http://localhost/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # NGINX Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - grafana
       - prometheus
     restart: unless-stopped

@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/cli/cmd_report.py
+# hypothesis_version: 6.151.10
+
+['--format', '--output', '--results-file', 'B', 'C', 'I', 'Output file path.', 'Output format.', 'RED', 'Report Generator', 'YELLOW', 'csv', 'helvetica', 'json', 'pc', 'pdf', 'txt', 'warning_level']

@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/risk/plotter.py
+# hypothesis_version: 6.151.10
+
+[0.0, 0.01, 0.2, 0.99, 1.0, 1.1, 20.0, 1000.0, 100, 'B-Plane ζ (km)', 'B-Plane ξ (km)', 'Collision Disk (HBR)', 'Primary', 'Secondary', 'X (km)', 'Y (km)', 'Z (km)', 'black', 'blue', 'circle', 'cross', 'darkblue', 'darkred', 'dash', 'data', 'hard_body_radius_m', 'left', 'lightgrey', 'lines', 'markers', 'miss_distance_km', 'pc', 'primary_id', 'red', 'rgba(0, 0, 255, 0.2)', 'rgba(0, 0, 255, 0.5)', 'rgba(0, 0, 255, 0.8)', 'rgba(255, 0, 0, 0.5)', 'secondary_id', 'sigma_bplane_km', 'top', 'white', 'x', 'y']

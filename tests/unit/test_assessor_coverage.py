@@ -16,8 +16,12 @@ class MockProp:
         self.calls += 1
         return StateVector(r=state.r, v=state.v, epoch=epoch, sat_id=state.sat_id)
 
-    def propagate_many_to(self, states_6d, start, end):
-        return states_6d
+    def propagate_sequence(self, state, epochs):
+        self.calls += 1
+        return [
+            StateVector(r=state.r, v=state.v, epoch=epoch, sat_id=state.sat_id)
+            for epoch in epochs
+        ]
 
 
 def test_assessor_proximity_filter_failures():
@@ -32,26 +36,14 @@ def test_assessor_proximity_filter_failures():
     sec_state = StateVector(np.array([7000.1, 0, 0]), np.array([0, 7.5, 0]), t0, "S1")
     s_prop = MockProp("S1")
 
-    # Mock to throw exception on propagate_many_to
-    s_prop.propagate_many_to = MagicMock(side_effect=Exception("Batch failed"))
+    # Mock to throw exception on propagate_sequence
+    s_prop.propagate_sequence = MagicMock(side_effect=Exception("Batch failed"))
 
     secondaries = [(sec_state, None, s_prop)]
 
     # Should catch exception and place object at 1e9, 1e9, 1e9
     pairs = assessor._proximity_filter(primary, p_prop, secondaries, [0.0], t0)
     assert len(pairs) == 0  # Placed far away, so it doesn't match
-
-    # Test single-propagation fallback error
-    sec_state2 = StateVector(
-        np.array([7000.1, 0, 0]), np.array([0, 7.5, 0]), t0 + timedelta(minutes=1), "S2"
-    )
-
-    # Same s_prop, but different epochs, so it falls back to single propagation
-    s_prop.propagate_to = MagicMock(side_effect=Exception("Single failed"))
-
-    secondaries2 = [(sec_state, None, s_prop), (sec_state2, None, s_prop)]
-    pairs2 = assessor._proximity_filter(primary, p_prop, secondaries2, [0.0], t0)
-    assert len(pairs2) == 0
 
 
 def test_assessor_kdtree_path():

@@ -46,50 +46,32 @@ class ConjunctionAssessor:
         """Stage 1: Coarse spatial filtering using KD-Trees or Vectorized norms."""
         candidate_pairs: dict[int, tuple[datetime, datetime]] = {}
         n_sec = len(secondaries)
-        sec_positions = np.zeros((n_sec, 3))
+        n_times = len(time_offsets)
 
-        from collections import defaultdict
+        epochs = [t0 + timedelta(seconds=dt) for dt in time_offsets]
 
-        prop_groups = defaultdict(list)
-        for j, (_, _, s_prop) in enumerate(secondaries):
-            prop_groups[s_prop.prop_id].append(j)
+        # Pre-propagate primary for all epochs
+        p_states = primary_propagator.propagate_sequence(primary, epochs)
+        p_positions = np.array([s.r for s in p_states])
+
+        sec_positions_all = np.zeros((n_times, n_sec, 3))
+
+        for idx, (s_state, _, s_prop) in enumerate(secondaries):
+            try:
+                s_states = s_prop.propagate_sequence(s_state, epochs)
+                sec_positions_all[:, idx, :] = np.array([s.r for s in s_states])
+            except Exception as e:
+                logger.warning(
+                    f"Batch propagation failed for secondary index {idx}: {e}. Moving object far away."
+                )
+                sec_positions_all[:, idx, :] = (1e9, 1e9, 1e9)
 
         last_tree_epoch: datetime | None = None
         current_index: KDTreeSpatialIndex | None = None
 
-        for dt in time_offsets:
-            epoch = t0 + timedelta(seconds=dt)
-            p_state = primary_propagator.propagate_to(primary, epoch)
-
-            for prop_id, indices in prop_groups.items():
-                first_idx = indices[0]
-                s_prop = secondaries[first_idx][2]
-                s_states_6d = np.array(
-                    [secondaries[idx][0].state_vector_6d for idx in indices]
-                )
-                s_epochs = [secondaries[idx][0].epoch for idx in indices]
-
-                if all(e == s_epochs[0] for e in s_epochs):
-                    try:
-                        ghost_vecs = s_prop.propagate_many_to(
-                            s_states_6d, s_epochs[0], epoch
-                        )
-                        sec_positions[indices] = ghost_vecs[:, :3]
-                    except Exception as e:
-                        logger.warning(
-                            f"Batch propagation failed: {e}. Moving objects far away."
-                        )
-                        sec_positions[indices] = (1e9, 1e9, 1e9)
-                else:
-                    for idx in indices:
-                        try:
-                            s_state, _, s_prop = secondaries[idx]
-                            sec_positions[idx] = s_prop.propagate_to(s_state, epoch).r
-                        except Exception as e:
-                            logger.warning(
-                                f"Propagation failed for secondary index {idx}: {e}. Moving object far away."
-                            )
-                            sec_positions[idx] = (1e9, 1e9, 1e9)
+        for t_idx, epoch in enumerate(epochs):
+            p_pos = p_positions[t_idx]
+            sec_positions = sec_positions_all[t_idx]
 
             if n_sec > 500:
                 if (
@@ -101,10 +83,10 @@ class ConjunctionAssessor:
                     last_tree_epoch = epoch
 
                 close_indices = current_index.query_radius(
-                    p_state.r, radius_km=self.screening_distance
+                    p_pos, radius_km=self.screening_distance
                 )
             else:
-                dists = np.linalg.norm(sec_positions - p_state.r, axis=1)
+                dists = np.linalg.norm(sec_positions - p_pos, axis=1)
                 close_indices = np.where(dists <= self.screening_distance)[0].tolist()
 
             for idx in close_indices:

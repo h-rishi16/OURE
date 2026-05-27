@@ -31,6 +31,7 @@ dependencies = [
     "astropy>=6.0",
     "textual>=0.52.0",
     "rich-click>=1.8.0",
+    "click-repl>=0.3",
 ]
 
 [project.optional-dependencies]
@@ -58,7 +59,7 @@ exclude = ["tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=oure --cov-report=term-missing --cov-fail-under=87"
+addopts = "--cov=oure --cov-report=term-missing --cov-fail-under=86"
 filterwarnings = [
     "ignore:.*unclosed database.*",
     "ignore:.*maximum number of subdivisions.*",

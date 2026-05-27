@@ -30,11 +30,11 @@ OURE can be run locally via CLI, launched via a lightweight web interface, or de
 git clone https://github.com/h-rishi16/oure.git
 cd oure
 
-# Install CLI and dependencies natively
-pip install -e .[web]
+# Sync all dependencies natively using uv
+uv sync --all-extras
 
 # Run the lightweight FastAPI + HTMX stack locally
-uvicorn oure.api.main:app --reload
+uv run uvicorn oure.api.main:app --reload
 ```
 
 ### 2. Enterprise Stack (Docker Compose)
@@ -93,7 +93,7 @@ OURE maintains strict engineering standards, verified by GitHub Actions CI/CD:
 - **Numerical Stability:** Joseph-form covariance updates, eigenvalue-ordered risk projection with singularity protection.
 
 ```bash
-pytest tests/ -v --cov=oure
+uv run pytest tests/ -v --cov=oure
 ```
 
 ## License

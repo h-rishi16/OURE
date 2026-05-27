@@ -42,7 +42,6 @@ def test_report_command_pdf(sample_results_json, tmp_path):
     result = runner.invoke(
         report,
         [
-            "--results-file",
             str(sample_results_json),
             "--format",
             "pdf",
