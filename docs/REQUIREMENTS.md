@@ -14,3 +14,4 @@ This document establishes bi-directional traceability (SWE-052) between software
 | **REQ-OPS-01** | The system shall support a periodic Watchlist monitoring daemon to evaluate specific assets against the public catalog. | Automated Test | `test_watchlist_monitor_run_screening_and_alerts` |
 | **REQ-OPS-02** | The system shall implement an automated API endpoint for TraCSS-compliant operator-to-operator maneuver negotiation. | Automated Test | `test_negotiate_low_pc`, `test_negotiate_no_capability`, `test_negotiate_critical_fuel`, `test_negotiate_less_fuel`, `test_negotiate_more_fuel` |
 | **REQ-PHYS-04** | The system shall support multi-state maneuver propagation for fleet-wide physics simulations. | Automated Test | `test_maneuver_optimizer` |
+| **REQ-OPS-03** | The system shall securely route all microservices through a unified NGINX reverse proxy on a single port. | Manual Test | `Verification of Port 80 routing` |
