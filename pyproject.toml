@@ -9,6 +9,22 @@ description = "Orbital Uncertainty & Risk Engine --- Satellite Collision Probabi
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
+authors = [
+  { name = "Hrishi Joshi", email = "hrishirjoshi16324@gmail.com" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+keywords = ["orbit", "satellite", "collision", "space", "astrodynamics", "SGP4", "conjunction"]
+
+
 dependencies = [
     "click>=8.1",
     "numpy>=1.26",
@@ -85,3 +101,8 @@ omit = ["*/tests/*"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["oure"]
+
+[project.urls]
+Homepage = "https://github.com/h-rishi16/oure"
+Repository = "https://github.com/h-rishi16/oure.git"
+Issues = "https://github.com/h-rishi16/oure/issues"
