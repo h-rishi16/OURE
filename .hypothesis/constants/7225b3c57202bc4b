@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/cli/main.py
+# hypothesis_version: 6.151.10
+
+['--db-path', '--log-file', '--st-password', '--st-username', '--verbose', '-v', '/exit', '/help', '1.0.0', 'Available Commands', 'DEBUG', 'INFO', 'OURE', 'OURE_LOG_FORMAT', 'SPACETRACK_PASS', 'SPACETRACK_USER', '__main__', 'bold magenta', 'command', 'commands', 'hidden', 'json', 'magenta italic', 'message', 'short_help']

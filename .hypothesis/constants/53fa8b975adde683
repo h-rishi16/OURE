@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/risk/foster.py
+# hypothesis_version: 6.151.10
+
+[-0.5, 0.0, 1e-15, 1e-12, 1e-08, 0.5, 1.0, 3.0, 5.0, 8.0, 100000, 'monte_carlo', 'numerical', 'oure.risk.foster', 'series']

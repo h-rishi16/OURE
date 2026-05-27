@@ -62,18 +62,6 @@ class StateVector:
         """Returns the concatenated 6D state vector [r, v]."""
         return np.concatenate([self.r, self.v])
 
-    @property
-    def is_in_leo(self) -> bool:
-        """Checks if the satellite is in Low Earth Orbit (altitude < 2000 km)."""
-        return self.altitude_km < 2000.0
-
-    @property
-    def orbital_energy(self) -> float:
-        """Calculates the specific orbital energy in km²/s²."""
-        return float(
-            (self.speed_km_s**2 / 2) - (constants.MU_KM3_S2 / np.linalg.norm(self.r))
-        )
-
     @classmethod
     def from_6d(cls, vec: np.ndarray, epoch: datetime, sat_id: str) -> StateVector:
         """Creates a StateVector from a 6D NumPy array."""
@@ -89,16 +77,6 @@ class StateVector:
             "epoch": self.epoch.isoformat(),
             "sat_id": self.sat_id,
         }
-
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> StateVector:
-        """Deserializes a StateVector from a dictionary."""
-        return cls(
-            r=np.array(d["r"]),
-            v=np.array(d["v"]),
-            epoch=datetime.fromisoformat(d["epoch"]),
-            sat_id=d["sat_id"],
-        )
 
     def __repr__(self) -> str:
         return f"StateVector(sat_id='{self.sat_id}', epoch='{self.epoch.isoformat()}')"
@@ -170,16 +148,6 @@ class SolarFluxData:
     f10_7: float
     f10_7_81day_avg: float
     ap_index: float
-
-
-@dataclass(frozen=True)
-class AtmosphereParams:
-    """Instantaneous atmosphere model parameters."""
-
-    f10_7: float
-    ap_index: float
-    rho_ref: float
-    scale_height_km: float
 
 
 @dataclass

@@ -14,8 +14,18 @@ from .utils import UI, console
 
 
 @cli.command()
-@click.option("--primary", "-p", required=True)
-@click.option("--secondaries-file", type=click.Path(exists=True), required=True)
+@click.option(
+    "--primary",
+    "-p",
+    required=True,
+    help="NORAD ID of the primary satellite to monitor.",
+)
+@click.option(
+    "--secondaries-file",
+    type=click.Path(exists=True),
+    required=True,
+    help="JSON file containing list of secondary NORAD IDs.",
+)
 @click.option(
     "--alert-threshold",
     default=1e-5,

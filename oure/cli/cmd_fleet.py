@@ -70,7 +70,10 @@ def _screen_single_primary(
         calculator = RiskCalculator(hard_body_radius_m=hard_body_radius)
         results = [calculator.compute_pc(e) for e in events]
         return results
-    except Exception:
+    except Exception as e:
+        import traceback
+
+        traceback.print_exc()
         return []
 
 
@@ -87,11 +90,29 @@ def _screen_single_primary(
     required=True,
     help="JSON file with secondary NORAD IDs.",
 )
-@click.option("--look-ahead", default=72.0, show_default=True)
-@click.option("--screening-dist", default=5.0, show_default=True)
-@click.option("--hard-body-radius", default=20.0, show_default=True)
+@click.option(
+    "--look-ahead", default=72.0, show_default=True, help="Look-ahead window in hours."
+)
+@click.option(
+    "--screening-dist",
+    default=5.0,
+    show_default=True,
+    help="KD-Tree screening distance in km.",
+)
+@click.option(
+    "--hard-body-radius",
+    default=20.0,
+    show_default=True,
+    help="Combined hard-body radius in metres.",
+)
 @click.option("--workers", default=4, help="Number of parallel processes.")
-@click.option("--output", "-o", type=click.Path(), default="fleet_results.json")
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    default="fleet_results.json",
+    help="Path to write the screening results.",
+)
 @click.pass_context
 def analyze_fleet(
     ctx: click.Context,

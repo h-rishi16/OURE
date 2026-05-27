@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/core/config.py
+# hypothesis_version: 6.151.10
+
+[0.5, 5.0, 48.0, 1000, '.env', 'INFO', 'OURE_LOG_FORMAT', 'OURE_LOG_LEVEL', 'OURE_MC_SAMPLES', 'SPACETRACK_PASS', 'SPACETRACK_USER', 'console', 'ignore', 'utf-8']

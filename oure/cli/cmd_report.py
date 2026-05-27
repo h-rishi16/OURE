@@ -34,23 +34,42 @@ class RiskReportPDF(FPDF):
 
 
 @cli.command()
-@click.option(
-    "--results-file",
+@click.argument(
+    "results_file",
     type=click.Path(exists=True),
-    required=True,
-    help="JSON file from analyze command.",
+    required=False,
 )
 @click.option(
     "--format",
     type=click.Choice(["txt", "json", "csv", "pdf"]),
     default="pdf",
+    show_default=True,
     help="Output format.",
 )
-@click.option("--output", type=click.Path(), required=True, help="Output file path.")
-def report(results_file: str, format: str, output: str) -> None:
+@click.option(
+    "--output",
+    type=click.Path(),
+    default="report.pdf",
+    show_default=True,
+    help="Output file path.",
+)
+def report(results_file: str | None, format: str, output: str) -> None:
     """
     Generate a summary of all high-risk events.
     """
+    import os
+
+    if not results_file:
+        if os.path.exists("fleet_results.json"):
+            results_file = "fleet_results.json"
+        elif os.path.exists("results.json"):
+            results_file = "results.json"
+        else:
+            UI.error(
+                "No results file provided and defaults (fleet_results.json, results.json) not found."
+            )
+            return
+
     UI.header("Report Generator", f"Compiling results from {results_file}")
 
     try:

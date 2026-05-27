@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/physics/breakup.py
+# hypothesis_version: 6.151.10
+
+[1e-06, 0.001, 0.02, 0.55, 3.0, 1000, 'oure.physics.breakup']

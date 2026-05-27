@@ -88,6 +88,59 @@ class SGP4Propagator(BasePropagator):
 
         return StateVector(r=r_eci, v=v_eci, epoch=target_epoch, sat_id=state.sat_id)
 
+    def propagate_sequence(
+        self, state: StateVector, epochs: list[datetime]
+    ) -> list[StateVector]:
+        from sgp4.api import jday
+
+        if not epochs:
+            return []
+
+        jd = np.zeros(len(epochs))
+        fr = np.zeros(len(epochs))
+        for i, t in enumerate(epochs):
+            j, f = jday(
+                t.year, t.month, t.day, t.hour, t.minute, t.second + t.microsecond / 1e6
+            )
+            jd[i] = j
+            fr[i] = f
+
+        error_code, r_teme, v_teme = self._satrec.sgp4_array(jd, fr)
+        if np.any(error_code != 0):
+            # Fallback to sequential to identify which one failed
+            return super().propagate_sequence(state, epochs)
+
+        import astropy.units as u
+        from astropy.coordinates import (
+            GCRS,
+            TEME,
+            CartesianDifferential,
+            CartesianRepresentation,
+        )
+        from astropy.time import Time
+
+        t_astro = Time(epochs)
+        rep = CartesianRepresentation(
+            x=r_teme[:, 0] * u.km, y=r_teme[:, 1] * u.km, z=r_teme[:, 2] * u.km
+        )
+        diff = CartesianDifferential(
+            d_x=v_teme[:, 0] * u.km / u.s,
+            d_y=v_teme[:, 1] * u.km / u.s,
+            d_z=v_teme[:, 2] * u.km / u.s,
+        )
+        rep = rep.with_differentials(diff)
+
+        teme_coord = TEME(rep, obstime=t_astro)
+        gcrs_coord = teme_coord.transform_to(GCRS(obstime=t_astro))
+
+        r_eci = gcrs_coord.cartesian.xyz.value.T
+        v_eci = gcrs_coord.velocity.d_xyz.value.T
+
+        return [
+            StateVector(r=r_eci[i], v=v_eci[i], epoch=epochs[i], sat_id=state.sat_id)
+            for i in range(len(epochs))
+        ]
+
     def propagate_many_to(
         self, states: np.ndarray, initial_epoch: datetime, target_epoch: datetime
     ) -> np.ndarray:

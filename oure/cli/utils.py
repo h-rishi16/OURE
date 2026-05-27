@@ -42,7 +42,16 @@ class UI:
     @staticmethod
     def header(title: str, subtitle: str | None = None) -> None:
         """Prints a branded OURE header."""
-        content = f"[bold white]OURE[/bold white] [dim]|[/dim] [info]{title}[/info]"
+        logo = """[cyan]   ██████╗ ██╗   ██╗██████╗ ███████╗
+  ██╔═══██╗██║   ██║██╔══██╗██╔════╝
+  ██║   ██║██║   ██║██████╔╝█████╗
+  ██║   ██║██║   ██║██╔══██╗██╔══╝
+  ╚██████╔╝╚██████╔╝██║  ██║███████╗
+   ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝[/cyan]
+"""
+        content = (
+            f"{logo}\n[bold white]OURE[/bold white] [dim]|[/dim] [info]{title}[/info]"
+        )
         if subtitle:
             content += f"\n[dim]{subtitle}[/dim]"
         console.print(Panel(content, border_style="blue", expand=False))
