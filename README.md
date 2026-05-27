@@ -24,17 +24,16 @@ Built for mission-critical speed and mathematical rigor, OURE processes Space-Tr
 
 OURE can be run locally via CLI, launched via a lightweight web interface, or deployed as a full enterprise microservice stack.
 
-### 1. Local CLI & Lightweight Launch
+### 1. Global Installation (CLI & Web)
+
+You can install OURE globally using `pip` (or `uv`):
 
 ```bash
-git clone https://github.com/h-rishi16/oure.git
-cd oure
-
-# Sync all dependencies natively using uv
-uv sync --all-extras
+# Install the OURE package and its dependencies
+pip install oure
 
 # Run the lightweight FastAPI + HTMX stack locally
-uv run uvicorn oure.api.main:app --reload
+uvicorn oure.api.main:app --reload
 ```
 
 ### 2. Enterprise Stack (Docker Compose)
@@ -42,6 +41,10 @@ uv run uvicorn oure.api.main:app --reload
 For production environments, OURE deploys as a fully isolated 6-service stack including the API, Background Workers, Redis Broker, Operations Dashboard, Prometheus metrics, and a Grafana observability suite.
 
 ```bash
+# Clone the repository for the Enterprise Stack
+git clone https://github.com/h-rishi16/oure.git
+cd oure
+
 # Start the full Enterprise Stack
 docker compose up --build -d
 ```
