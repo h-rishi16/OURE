@@ -5,11 +5,14 @@ OURE Risk Calculation - Orchestrator
 
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
 
 from oure.core.models import ConjunctionEvent, RiskResult
 
 from .alert import AlertClassifier
+from .alfano import AlfanoPcCalculator
 from .bplane import BPlaneProjector
 from .foster import FosterPcCalculator
 
@@ -19,10 +22,16 @@ class RiskCalculator:
     Computes the Probability of Collision for a ConjunctionEvent.
     """
 
-    def __init__(self, hard_body_radius_m: float = 20.0):
+    def __init__(self, hard_body_radius_m: float = 20.0, method: str = "foster"):
         self.hard_body_radius_km = hard_body_radius_m / 1000.0
         self.bplane_projector = BPlaneProjector()
-        self.pc_calculator = FosterPcCalculator(self.hard_body_radius_km)
+
+        self.method = method.lower()
+        self.pc_calculator: Any
+        if self.method == "alfano":
+            self.pc_calculator = AlfanoPcCalculator(self.hard_body_radius_km)
+        else:
+            self.pc_calculator = FosterPcCalculator(self.hard_body_radius_km)
 
     def compute_pc(self, event: ConjunctionEvent) -> RiskResult:
         """
@@ -71,7 +80,9 @@ class RiskCalculator:
             hard_body_radius_m=self.hard_body_radius_km * 1000,
             b_plane_sigma_x=sigma_x,
             b_plane_sigma_z=sigma_z,
-            method=self.pc_calculator.method.value,
+            method=getattr(self.pc_calculator, "method", None)
+            and self.pc_calculator.method.value
+            or "Alfano_Max_Prob",
         )
 
         result.warning_level = alert.classify(result)

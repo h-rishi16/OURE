@@ -1,11 +1,14 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 import click
 import numpy as np
 
 from oure.core.models import ConjunctionEvent, CovarianceMatrix, StateVector
 from oure.data.cdm_writer import CDMWriter
+from oure.data.oem import OEMWriter
+from oure.physics.sgp4_propagator import SGP4Propagator
 from oure.reporting.pdf_report import ConjunctionReportGenerator
 
 from .main import cli
@@ -59,3 +62,35 @@ def report_event(event_id: str, output: str, include_maneuver: bool) -> None:
     generator = ConjunctionReportGenerator()
     generator.generate(event, None, Path(output))
     UI.success(f"Generated PDF report for {event_id} at {output}")
+
+
+@cli.command("export-ephemeris")
+@click.option("--primary", required=True, help="NORAD catalog ID of the satellite.")
+@click.option(
+    "--output", type=click.Path(), required=True, help="Output path for OEM file."
+)
+@click.pass_obj
+def export_ephemeris(ctx: Any, primary: str, output: str) -> None:
+    """Propagate a satellite for 24 hours and export its ephemeris in CCSDS OEM format."""
+    tle = ctx.tle_fetcher.fetch_tle(primary)
+    propagator = SGP4Propagator(tle)
+
+    start_time = datetime.now(UTC)
+    states = []
+
+    # Dummy state vector just to satisfy BasePropagator interface
+    dummy_state = StateVector(np.zeros(3), np.zeros(3), start_time, primary)
+
+    click.echo(f"Propagating {primary} for 24 hours...")
+    for minutes in range(0, 24 * 60, 5):  # 5-minute step size
+        epoch = start_time + timedelta(minutes=minutes)
+        state = propagator.propagate_to(dummy_state, epoch)
+        states.append(state)
+
+    writer = OEMWriter()
+    oem_data = writer.write(states)
+
+    with open(output, "w") as f:
+        f.write(oem_data)
+
+    UI.success(f"Successfully exported 24-hour ephemeris to {output}")
