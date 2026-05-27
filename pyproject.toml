@@ -28,11 +28,27 @@ dependencies = [
     "astropy>=6.0",
     "rich-click>=1.8.0",
     "click-repl>=0.3",
+    "pytest>=8",
+    "pytest-cov",
+    "pytest-asyncio",
+    "hypothesis",
+    "ruff",
+    "mypy",
+    "pre-commit",
+    "faker",
+    "scipy-stubs",
+    "pandas-stubs",
+    "types-requests",
+    "types-redis",
+    "types-python-dateutil",
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "celery>=5.3",
+    "redis>=5.0",
+    "prometheus-fastapi-instrumentator>=6.1.0",
 ]
-
-[project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov", "pytest-asyncio", "hypothesis", "ruff", "mypy", "pre-commit", "faker", "scipy-stubs", "pandas-stubs", "types-requests", "types-redis", "types-python-dateutil"]
-web = ["fastapi>=0.100", "uvicorn>=0.20", "jinja2>=3.1", "python-multipart>=0.0.9", "celery>=5.3", "redis>=5.0", "prometheus-fastapi-instrumentator>=6.1.0"]
 
 [project.scripts]
 oure = "oure.cli.main:cli"
