@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "oure-risk-engine"
+name = "oure"
 version = "1.0.0"
 description = "Orbital Uncertainty & Risk Engine --- Satellite Collision Probability Solver"
 readme = "README.md"
