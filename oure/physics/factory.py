@@ -34,10 +34,17 @@ class PropagatorFactory:
         area_m2: float = 10.0,
         mass_kg: float = 500.0,
         ap: float = 4.0,
+        backend: str = "native",
     ) -> BasePropagator:
         """
         Builds and returns the configured propagator chain.
         """
+        if backend == "orekit":
+            from .orekit_backend import OrekitPropagator
+
+            logger.debug("Using Optional Orekit Track")
+            return OrekitPropagator(tle, use_numerical=not use_analytical)
+
         if use_analytical:
             # Analytical Track: Pure SGP4.
             # Note: SGP4 implicitly models J2 and Drag (via B*), so it must NEVER
