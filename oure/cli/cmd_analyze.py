@@ -98,12 +98,18 @@ def validate_norad_id(
     "--output", "-o", type=click.Path(), default=None, help="Save results to JSON."
 )
 @click.pass_context
+@click.option(
+    "--visualize",
+    is_flag=True,
+    help="Generate interactive 3D HTML visualization of conjunctions",
+)
 def analyze(
     ctx: click.Context,
     primary: str,
     secondary: tuple[str, ...],
     secondaries_file: str | None,
     look_ahead: float,
+    visualize: bool,
     screening_dist: float,
     mc_samples: int,
     hard_body_radius: float,

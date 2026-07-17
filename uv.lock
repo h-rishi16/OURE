@@ -1141,7 +1141,7 @@ numpy = [
 ]
 
 [[package]]
-name = "oure-risk-engine"
+name = "oure"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [
