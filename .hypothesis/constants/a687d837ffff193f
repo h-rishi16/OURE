@@ -1,0 +1,4 @@
+# file: /app/oure/risk/calculator.py
+# hypothesis_version: 6.153.2
+
+[0.0, 1e-06, 20.0, 1000.0, 3600.0, 1000, 'Alfano_Max_Prob', 'GREEN', 'SKIPPED_SINGULAR', 'alfano', 'foster', 'method']
