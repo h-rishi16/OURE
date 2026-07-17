@@ -1,0 +1,4 @@
+# file: /app/physics/solver.py
+# hypothesis_version: 6.153.2
+
+[1e-12, 398600.4418, 'DOP853']

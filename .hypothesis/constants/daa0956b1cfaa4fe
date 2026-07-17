@@ -1,0 +1,4 @@
+# file: /app/oure/physics/factory.py
+# hypothesis_version: 6.153.2
+
+[1.2, 2.2, 4.0, 10.0, 500.0, 'native', 'orekit', 'oure.physics.factory']
