@@ -1,0 +1,4 @@
+# file: /app/oure/data/api_client.py
+# hypothesis_version: 6.153.2
+
+[30.0, 3600, 'active_tles.txt', 'api_client', 'w']
