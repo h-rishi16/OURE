@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/data/cdm_writer.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 ['CATALOG_NAME = NORAD', 'CCSDS_CDM_VERS = 1.0', 'MANEUVERABLE = N/A', 'META_START', 'META_STOP', 'OBJECT = OBJECT1', 'OBJECT = OBJECT2', 'OBJECT1', 'OBJECT2', 'ORIGINATOR = OURE', 'np.ndarray', 'w']

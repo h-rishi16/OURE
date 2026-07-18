@@ -1,12 +1,13 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 
 from oure.cli.utils import _default_covariance, _tle_to_initial_state
 from oure.conjunction.assessor import ConjunctionAssessor
 from oure.core.config import settings
+from oure.data.api_client import fetch_active_tles
 from oure.data.noaa import NOAASolarFluxFetcher
 from oure.data.spacetrack import SpaceTrackFetcher
 from oure.physics.factory import PropagatorFactory
@@ -26,7 +27,23 @@ flux_fetcher = NOAASolarFluxFetcher()
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> HTMLResponse:
     """Render the main HTMX dashboard page."""
-    return templates.TemplateResponse(request, "index.html")
+    return templates.TemplateResponse(request, "index.html", {"request": request})
+
+
+@router.get("/globe", response_class=HTMLResponse)
+async def globe(request: Request) -> HTMLResponse:
+    """Render the 3D Interactive Map."""
+    return templates.TemplateResponse(request, "globe.html", {"request": request})
+
+
+@router.get("/api/tles", response_class=PlainTextResponse)
+async def get_tles() -> PlainTextResponse:
+    """Fetch active TLEs asynchronously and serve them to the frontend."""
+    cache_file = await fetch_active_tles()
+    if cache_file and Path(cache_file).exists():
+        with open(cache_file, "r") as f:
+            return f.read()
+    raise HTTPException(status_code=500, detail="Could not fetch TLEs")
 
 
 @router.post("/analyze", response_class=HTMLResponse)

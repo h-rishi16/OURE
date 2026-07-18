@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/cli/cmd_analyze.py
-# hypothesis_version: 6.151.10
-
-[5.0, 20.0, 72.0, 1000, '--hard-body-radius', '--look-ahead', '--mc-samples', '--output', '--primary', '--screening-dist', '--secondaries-file', '--secondary', '-o', '-p', '-s', '\\d{1,9}']

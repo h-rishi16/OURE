@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/data/cdm_parser.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 [0.0, 1e-06, 1.0, '+00:00', 'CR11', 'CR21', 'CR22', 'CR31', 'CR32', 'CR33', 'CR41', 'CR42', 'CR43', 'CR44', 'CR51', 'CR52', 'CR53', 'CR54', 'CR55', 'CR61', 'CR62', 'CR63', 'CR64', 'CR65', 'CR66', 'MISS_DISTANCE', 'OBJECT_DESIGNATOR', 'RELATIVE_SPEED', 'TCA', 'UNKNOWN', 'X', 'X_DOT', 'Y', 'Y_DOT', 'Z', 'Z_DOT', 'body', 'covariance_matrix', 'data', 'metadata', 'oure.data.cdm_parser', 'segment1', 'segment2', 'state_vector']

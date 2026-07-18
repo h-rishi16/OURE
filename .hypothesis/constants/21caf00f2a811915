@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/cli/cmd_monitor.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 [1e-05, 5.0, 20.0, 72.0, 500, 3600, 1000000, '--alert-threshold', '--interval', '--max-runs', '--primary', '--secondaries-file', '-p']

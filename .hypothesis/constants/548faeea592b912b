@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/data/spacetrack.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 [0.0, 0.0005, 0.3, 0.7, 1.0, 2.0, 6.0, 10.0, 14.0, 16.0, 24.0, 30.0, 60.0, 72.0, 120.0, 400.0, 800.0, 3600.0, 6371.0, 86400.0, 398600.4418, 180, 300, 360, 3600, 90000, '%Y-%m-%d %H:%M:%S', ',', 'ARG_OF_PERICENTER', 'BSTAR', 'ECCENTRICITY', 'EPOCH', 'Failed', 'INCLINATION', 'MEAN_ANOMALY', 'MEAN_MOTION', 'NORAD_CAT_ID', 'OBJECT_NAME', 'RA_OF_ASC_NODE', 'TLE_LINE1', 'TLE_LINE2', 'UNKNOWN', 'force_refresh', 'fresh', 'identity', 'json', 'oure.data.spacetrack', 'password', 'quality_score', 'spacetrack_bulk_leo']

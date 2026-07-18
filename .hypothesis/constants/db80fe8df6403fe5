@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/uncertainty/stm.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 [-1.5, 0.0, 0.0001, 1.0, 'oure.uncertainty.stm']

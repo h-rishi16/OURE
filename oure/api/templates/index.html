@@ -11,17 +11,26 @@
             </h2>
         </div>
 
+        <div class="px-6 pt-5 pb-1 border-b border-gray-800">
+            <label class="block text-xs font-semibold text-blue-400 uppercase tracking-wider mb-3">Quick Scenarios</label>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="document.getElementsByName('primary_id')[0].value='25544'; document.getElementsByName('secondary_id')[0].value='43205';" class="text-xs bg-gray-700 hover:bg-blue-600 border border-gray-600 text-white py-1.5 px-3 rounded-md transition-all">ISS vs Debris</button>
+                <button type="button" onclick="document.getElementsByName('primary_id')[0].value='20580'; document.getElementsByName('secondary_id')[0].value='44713';" class="text-xs bg-gray-700 hover:bg-blue-600 border border-gray-600 text-white py-1.5 px-3 rounded-md transition-all">Hubble vs Starlink</button>
+                <button type="button" onclick="document.getElementsByName('primary_id')[0].value='48274'; document.getElementsByName('secondary_id')[0].value='31566';" class="text-xs bg-gray-700 hover:bg-blue-600 border border-gray-600 text-white py-1.5 px-3 rounded-md transition-all">Tiangong Space Station</button>
+            </div>
+        </div>
+
         <form hx-post="/ui/analyze" hx-target="#results-container" hx-indicator="#loading-indicator" class="p-6 space-y-5">
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Primary NORAD ID</label>
-                <input type="text" name="primary_id" value="25544" required
+                <input type="text" name="primary_id" value="{{ request.query_params.get('primary', '25544') }}" required
                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
                 <p class="text-xs text-gray-500 mt-1">Default: ISS (Zarya)</p>
             </div>
 
             <div>
                 <label class="block text-sm font-medium text-gray-400 mb-1">Secondary NORAD ID</label>
-                <input type="text" name="secondary_id" value="43205" required
+                <input type="text" name="secondary_id" value="{{ request.query_params.get('secondary', '43205') }}" required
                        class="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
             </div>
 

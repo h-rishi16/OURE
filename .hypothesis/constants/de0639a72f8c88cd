@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/api/celery_app.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 [300.0, 'CELERY_BROKER_URL', 'UTC', 'json', 'oure.api.tasks', 'oure_tasks', 'schedule', 'task']
