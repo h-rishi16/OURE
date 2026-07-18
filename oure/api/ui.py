@@ -6,10 +6,8 @@ from fastapi.templating import Jinja2Templates
 
 from oure.cli.utils import _default_covariance, _tle_to_initial_state
 from oure.conjunction.assessor import ConjunctionAssessor
-from oure.core.config import settings
 from oure.data.api_client import fetch_active_tles
 from oure.data.noaa import NOAASolarFluxFetcher
-from oure.data.spacetrack import SpaceTrackFetcher
 from oure.physics.factory import PropagatorFactory
 from oure.risk.calculator import RiskCalculator
 from oure.risk.plotter import RiskPlotter
@@ -20,7 +18,6 @@ router = APIRouter(prefix="/ui", tags=["UI"])
 templates_dir = Path(__file__).parent / "templates"
 templates = Jinja2Templates(directory=str(templates_dir))
 
-tle_fetcher = SpaceTrackFetcher(settings.spacetrack_user, settings.spacetrack_pass)
 flux_fetcher = NOAASolarFluxFetcher()
 
 
@@ -58,11 +55,34 @@ async def analyze_risk(
     the rendered HTML fragment containing the results and Plotly chart.
     """
     try:
-        # 1. Fetch Data
-        records = tle_fetcher.fetch(sat_ids=[primary_id, secondary_id])
-        record_map = {r.sat_id: r for r in records}
+        # 1. Fetch Data from CelesTrak (No Authentication Required)
+        import httpx
+
+        from oure.data.spacetrack import SpaceTrackFetcher  # For the parser logic
+
+        url = f"https://celestrak.org/NORAD/elements/gp.php?CATNR={primary_id},{secondary_id}&FORMAT=json"
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, timeout=10.0)
+            resp.raise_for_status()
+            data = resp.json()
+
+        # Instantiate fetcher just to use its handy JSON parser method
+        dummy_fetcher = SpaceTrackFetcher("", "")
+
+        record_map = {}
+        for item in data:
+            try:
+                # CelesTrak JSON is identical to SpaceTrack JSON
+                rec = dummy_fetcher._parse_tle_record(item)
+                record_map[rec.sat_id] = rec
+            except Exception:
+                continue
+
         if primary_id not in record_map or secondary_id not in record_map:
-            raise HTTPException(status_code=404, detail="Satellite data missing.")
+            raise HTTPException(
+                status_code=404,
+                detail="Satellite data missing or not found on CelesTrak.",
+            )
 
         flux = flux_fetcher.get_current_f107()
 
