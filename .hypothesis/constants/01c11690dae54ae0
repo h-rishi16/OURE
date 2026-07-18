@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/physics/frames.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 [-1.0, 1e-15, 1.0, 'ij,ij->i', 'nij,nj->ni']

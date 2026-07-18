@@ -1,4 +1,4 @@
 # file: /Users/hrishi/Projects/oure/oure/cli/cmd_cdm.py
-# hypothesis_version: 6.151.10
+# hypothesis_version: 6.153.2
 
 [20.0, '--cdm-file', '--hard-body-radius', 'CDM Ingestion Tool']

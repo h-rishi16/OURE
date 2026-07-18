@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="bg-gray-900 rounded-2xl border border-gray-700 shadow-2xl overflow-hidden relative" style="height: 80vh;">
+    <div id="globe-container" class="w-full h-full cursor-crosshair"></div>
+
+    <!-- Category Filter Pills (Bottom Center) -->
+    <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 bg-gray-900/80 backdrop-blur-md p-2 rounded-full border border-gray-600 shadow-2xl z-20">
+        <button onclick="setFilter('ALL')" id="flt-ALL" class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-600 text-white transition-all shadow-lg">All</button>
+        <button onclick="setFilter('STATION')" id="flt-STATION" class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold text-gray-400 hover:text-white transition-all">Stations</button>
+        <button onclick="setFilter('STARLINK')" id="flt-STARLINK" class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold text-gray-400 hover:text-white transition-all">Starlink</button>
+        <button onclick="setFilter('ONEWEB')" id="flt-ONEWEB" class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold text-gray-400 hover:text-white transition-all">OneWeb</button>
+        <button onclick="setFilter('WEATHER')" id="flt-WEATHER" class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold text-gray-400 hover:text-white transition-all">Earth Obs</button>
+        <button onclick="setFilter('NAV')" id="flt-NAV" class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold text-gray-400 hover:text-white transition-all">Navigation</button>
+    </div>
+
+    <!-- Mission Control (Top Right) -->
+    <div class="absolute top-6 right-6 bg-gray-900/80 backdrop-blur-md border border-gray-600 rounded-xl p-5 shadow-2xl w-80 z-20">
+        <h3 class="text-lg font-bold text-white mb-4 flex items-center"><span class="mr-2">🚀</span> Mission Control</h3>
+
+        <div class="mb-3">
+            <label class="block text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">Primary Target</label>
+            <div id="ui-primary" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-500 font-mono truncate">None Selected</div>
+        </div>
+
+        <div class="mb-5">
+            <label class="block text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">Secondary Target</label>
+            <div id="ui-secondary" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-500 font-mono truncate">None Selected</div>
+        </div>
+
+        <button id="run-analysis-btn" disabled class="w-full bg-gray-700 text-gray-400 font-bold py-3 px-4 rounded-lg transition-all text-sm flex items-center justify-center cursor-not-allowed">
+            <span class="mr-2">⚡</span> Run Conjunction Analysis
+        </button>
+    </div>
+
+    <!-- Satellite Info Overlay (Left) -->
+    <div id="overlay" class="absolute top-6 left-6 bg-gray-900/90 backdrop-blur-md border border-gray-600 rounded-xl p-5 shadow-2xl hidden max-w-sm w-full z-20 transform transition-all">
+        <div class="flex justify-between items-start mb-3">
+            <h3 class="text-lg font-bold text-white leading-tight pr-4" id="sat-name">Satellite</h3>
+            <button onclick="document.getElementById('overlay').classList.add('hidden')" class="text-gray-400 hover:text-white transition-colors">&times;</button>
+        </div>
+        <div class="space-y-2 mb-5 bg-gray-800/50 p-3 rounded-lg border border-gray-700/50">
+            <p class="text-sm text-gray-400 flex justify-between items-center"><span>NORAD ID:</span> <span id="sat-id" class="text-blue-400 font-mono font-bold tracking-wider"></span></p>
+            <p class="text-sm text-gray-400 flex justify-between items-center"><span>Category:</span> <span id="sat-cat" class="text-white text-xs font-bold px-2 py-0.5 rounded bg-gray-700"></span></p>
+            <p class="text-sm text-gray-400 flex justify-between items-center"><span>Altitude:</span> <span class="text-white"><span id="sat-alt"></span> km</span></p>
+            <p class="text-sm text-gray-400 flex justify-between items-center"><span>Velocity:</span> <span class="text-white"><span id="sat-vel"></span> km/s</span></p>
+        </div>
+        <div class="flex space-x-3">
+            <button id="set-primary-btn" class="flex-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/50 font-semibold py-2 px-3 rounded-lg transition-all text-sm shadow-lg active:scale-95">
+                Set Primary
+            </button>
+            <button id="set-secondary-btn" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/50 font-semibold py-2 px-3 rounded-lg transition-all text-sm shadow-lg active:scale-95">
+                Set Secondary
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Count Stats -->
+    <div class="absolute bottom-6 left-6 text-xs text-gray-400 bg-gray-900/60 backdrop-blur px-3 py-1.5 rounded-lg border border-gray-700 pointer-events-none z-20">
+        Live Catalog: <span id="sat-count" class="text-white font-bold">0</span> satellites
+        <div class="text-blue-400 mt-1 font-semibold text-[10px] uppercase tracking-wider">Speed: Real-Time</div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900/95 z-30 backdrop-blur-md transition-opacity duration-500">
+        <div class="relative w-20 h-20 mb-6">
+            <div class="absolute inset-0 border-4 border-gray-700 rounded-full"></div>
+            <div class="absolute inset-0 border-4 border-blue-500 rounded-full border-t-transparent animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center text-2xl">🌍</div>
+        </div>
+        <h2 class="text-xl font-bold text-white mb-2">Initializing SSA Globe</h2>
+        <p class="text-blue-400 font-medium text-sm" id="loading-text">Downloading TLE catalog from CelesTrak...</p>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js"></script>
+<script>
+    const container = document.getElementById('globe-container');
+    const loading = document.getElementById('loading');
+    const loadingText = document.getElementById('loading-text');
+    const overlay = document.getElementById('overlay');
+
+    // UI Elements
+    const satName = document.getElementById('sat-name');
+    const satId = document.getElementById('sat-id');
+    const satCat = document.getElementById('sat-cat');
+    const satAlt = document.getElementById('sat-alt');
+    const satVel = document.getElementById('sat-vel');
+    const satCountUI = document.getElementById('sat-count');
+
+    const uiPrimary = document.getElementById('ui-primary');
+    const uiSecondary = document.getElementById('ui-secondary');
+    const runBtn = document.getElementById('run-analysis-btn');
+
+    let currentFilter = 'ALL';
+    let primaryTarget = null;
+    let secondaryTarget = null;
+
+    // Filter Logic
+    window.setFilter = function(category) {
+        currentFilter = category;
+        // Update Pills
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white', 'shadow-lg');
+            btn.classList.add('text-gray-400');
+            btn.classList.remove('bg-gray-700');
+        });
+        const activeBtn = document.getElementById(`flt-${category}`);
+        activeBtn.classList.remove('text-gray-400');
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-lg');
+
+        // Instantly calculate visible count and hide filtered satellites
+        let count = 0;
+        if (satPoints && satPoints.geometry) {
+            const posAttr = satPoints.geometry.attributes.position;
+            const positions = posAttr.array;
+            for(let i=0; i<satellites.length; i++) {
+                if (category === 'ALL' || satellites[i].category === category) {
+                    count++;
+                } else {
+                    positions[i*3] = 0; positions[i*3+1] = 0; positions[i*3+2] = 0;
+                }
+            }
+            posAttr.needsUpdate = true;
+        }
+        satCountUI.innerText = count.toLocaleString();
+    };
+
+    function updateMissionControl() {
+        uiPrimary.innerHTML = primaryTarget ? `<span class="text-white">[${primaryTarget.id}]</span> ${primaryTarget.name}` : 'None Selected';
+        uiPrimary.className = primaryTarget ? "bg-gray-800 border border-indigo-500/50 rounded-lg px-3 py-2 text-sm text-indigo-300 font-mono truncate" : "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-500 font-mono truncate";
+
+        uiSecondary.innerHTML = secondaryTarget ? `<span class="text-white">[${secondaryTarget.id}]</span> ${secondaryTarget.name}` : 'None Selected';
+        uiSecondary.className = secondaryTarget ? "bg-gray-800 border border-emerald-500/50 rounded-lg px-3 py-2 text-sm text-emerald-300 font-mono truncate" : "bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-500 font-mono truncate";
+
+        if (primaryTarget && secondaryTarget) {
+            runBtn.disabled = false;
+            runBtn.className = "w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-all text-sm flex items-center justify-center shadow-lg shadow-blue-500/30 active:scale-95";
+        } else {
+            runBtn.disabled = true;
+            runBtn.className = "w-full bg-gray-700 text-gray-400 font-bold py-3 px-4 rounded-lg transition-all text-sm flex items-center justify-center cursor-not-allowed";
+        }
+    }
+
+    runBtn.onclick = () => {
+        if (primaryTarget && secondaryTarget) {
+            window.location.href = `/ui/?primary=${primaryTarget.id}&secondary=${secondaryTarget.id}`;
+        }
+    };
+
+    // Scene Setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.TextureLoader().load('https://unpkg.com/three-globe/example/img/night-sky.png');
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 1, 100000);
+    camera.position.set(0, 5000, 25000);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, logarithmicDepthBuffer: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.minDistance = 7000;
+    controls.maxDistance = 50000;
+    controls.enablePan = false;
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0x404040, 1.5));
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    sunLight.position.set(50000, 20000, 30000);
+    scene.add(sunLight);
+
+    const textureLoader = new THREE.TextureLoader();
+    const earthRadius = 6371;
+
+    const earthMaterial = new THREE.MeshPhongMaterial({
+        map: textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
+        specularMap: textureLoader.load('https://unpkg.com/three-globe/example/img/earth-water.png'),
+        bumpMap: textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+        bumpScale: 15,
+        specular: new THREE.Color(0x333333),
+        shininess: 15
+    });
+    const earthMesh = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), earthMaterial);
+    scene.add(earthMesh);
+
+    const cloudMaterial = new THREE.MeshPhongMaterial({
+        map: textureLoader.load('https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'),
+        transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(earthRadius * 1.01, 64, 64), cloudMaterial);
+    scene.add(cloudMesh);
+
+    // Foreground Stars
+    const starGeometry = new THREE.BufferGeometry();
+    const starVertices = [];
+    const starColors = [];
+    const starColorObj = new THREE.Color();
+    for(let i=0; i<5000; i++) {
+        const x = (Math.random() - 0.5) * 200000;
+        const y = (Math.random() - 0.5) * 200000;
+        const z = (Math.random() - 0.5) * 200000;
+        if (Math.sqrt(x*x + y*y + z*z) > 40000) {
+            starVertices.push(x, y, z);
+            const temp = Math.random();
+            if (temp > 0.9) starColorObj.setHex(0xaaaaee);
+            else if (temp > 0.7) starColorObj.setHex(0xeeccaa);
+            else starColorObj.setHex(0xffffff);
+            starColors.push(starColorObj.r, starColorObj.g, starColorObj.b);
+        }
+    }
+    starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
+    starGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+    scene.add(new THREE.Points(starGeometry, new THREE.PointsMaterial({size: 2.0, transparent: true, opacity: 0.9, sizeAttenuation: false, vertexColors: true})));
+
+    // Satellites Point Cloud
+    const MAX_SATS = 10000;
+    const satGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(MAX_SATS * 3);
+    const colors = new Float32Array(MAX_SATS * 3);
+
+    satGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    satGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const pointMaterial = new THREE.PointsMaterial({
+        size: 90, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending
+    });
+    const satPoints = new THREE.Points(satGeometry, pointMaterial);
+
+    // Hardcode a massive bounding sphere so the raycaster never ignores the points,
+    // even if they haven't been moved from (0,0,0) yet.
+    satPoints.geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 50000);
+    satPoints.frustumCulled = false;
+
+    scene.add(satPoints);
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.params.Points.threshold = 300;
+    const mouse = new THREE.Vector2();
+    let satellites = [];
+    let activeSatSelected = null;
+
+    function getCategory(name) {
+        if (name.includes("ISS") || name.includes("ZARYA") || name.includes("CSS") || name.includes("TIANGONG")) return "STATION";
+        if (name.includes("STARLINK")) return "STARLINK";
+        if (name.includes("ONEWEB")) return "ONEWEB";
+        if (name.includes("NOAA") || name.includes("GOES") || name.includes("METEOR") || name.includes("TERRA") || name.includes("AQUA") || name.includes("FLOCK") || name.includes("LANDSAT")) return "WEATHER";
+        if (name.includes("NAVSTAR") || name.includes("GLONASS") || name.includes("GALILEO") || name.includes("BEIDOU") || name.includes("GPS") || name.includes("QZS")) return "NAV";
+        return "OTHER";
+    }
+
+    // Animation Loop
+    let timeOffset = 0;
+    let lastFrameTime = Date.now();
+    const TIME_SPEED = 1; // Real-time
+
+    // Optimization: Only run heavy SGP4 physics on a chunk of satellites per frame
+    let frameCounter = 0;
+    const UPDATE_CHUNKS = 15; // Cuts CPU usage by ~93%
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+
+        const nowReal = Date.now();
+        const dt = nowReal - lastFrameTime;
+        lastFrameTime = nowReal;
+
+        // Accumulate accelerated time
+        timeOffset += dt * (TIME_SPEED - 1);
+        const simDate = new Date(nowReal + timeOffset);
+
+        if (satellites.length > 0) {
+            const posAttr = satPoints.geometry.attributes.position;
+            const positions = posAttr.array;
+            const gmst = satellite.gstime(simDate);
+            const cosG = Math.cos(gmst);
+            const sinG = Math.sin(gmst);
+
+            earthMesh.rotation.y = gmst;
+            cloudMesh.rotation.y = gmst * 1.05;
+
+            // Staggered physics updates
+            const chunkSize = Math.ceil(satellites.length / UPDATE_CHUNKS);
+            const startIdx = frameCounter * chunkSize;
+            const endIdx = Math.min(startIdx + chunkSize, satellites.length);
+
+            for (let i = startIdx; i < endIdx; i++) {
+                const sat = satellites[i];
+
+                // Skip physics math if hidden
+                if (currentFilter !== 'ALL' && sat.category !== currentFilter) {
+                    continue;
+                }
+
+                const pv = satellite.propagate(sat.satrec, simDate);
+                if (pv.position && pv.position.x !== undefined) {
+                    const p = pv.position;
+                    positions[i*3] = p.x;
+                    positions[i*3+1] = p.z;
+                    positions[i*3+2] = -p.y;
+                }
+            }
+            posAttr.needsUpdate = true;
+            frameCounter = (frameCounter + 1) % UPDATE_CHUNKS;
+        }
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    fetch('/ui/api/tles')
+        .then(res => res.text())
+        .then(data => {
+            const lines = data.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let count = 0;
+            const colAttr = satPoints.geometry.attributes.color.array;
+
+            for (let i = 0; i < lines.length; i++) {
+                if (count >= MAX_SATS) break;
+                if (lines[i].startsWith('1 ') && i > 0 && i + 1 < lines.length) {
+                    const name = lines[i-1];
+                    const tle1 = lines[i];
+                    const tle2 = lines[i+1];
+                    const noradId = tle1.substring(2, 7).trim();
+                    const category = getCategory(name);
+
+                    try {
+                        const satrec = satellite.twoline2satrec(tle1, tle2);
+                        if (satrec.error === 0) {
+                            satellites.push({name, id: noradId, category, satrec});
+
+                            let r=0.4, g=0.5, b=0.7; // Default OTHER
+                            if(category === "STARLINK") { r=0.1; g=0.9; b=0.3; } // Green
+                            if(category === "ONEWEB") { r=0.8; g=0.2; b=0.9; }   // Purple
+                            if(category === "STATION") { r=1.0; g=1.0; b=1.0; }  // White
+                            if(category === "WEATHER") { r=0.2; g=0.8; b=1.0; }  // Cyan
+                            if(category === "NAV") { r=1.0; g=0.8; b=0.2; }      // Yellow
+
+                            colAttr[count*3] = r; colAttr[count*3+1] = g; colAttr[count*3+2] = b;
+                            count++;
+                        }
+                    } catch (e) {}
+                }
+            }
+            satPoints.geometry.setDrawRange(0, count);
+            satPoints.geometry.attributes.color.needsUpdate = true;
+            // Initialize accurate visible count
+            if (currentFilter === 'ALL') satCountUI.innerText = count.toLocaleString();
+            loading.style.opacity = '0';
+            setTimeout(() => loading.remove(), 500);
+        });
+
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+        if(satellites.length === 0) return;
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ( (event.clientX - rect.left) / rect.width ) * 2 - 1;
+        mouse.y = - ( (event.clientY - rect.top) / rect.height ) * 2 + 1;
+
+        // Increase threshold to make small dots easier to click
+        raycaster.params.Points.threshold = 400;
+        raycaster.setFromCamera(mouse, camera);
+
+        // Check intersections against BOTH satellites and the Earth
+        const intersects = raycaster.intersectObjects([satPoints, earthMesh]);
+
+        let earthDistance = Infinity;
+        let bestSat = null;
+        let minRayDist = Infinity;
+
+        // 1. Find the Earth distance to act as a physical blocker
+        for (let i = 0; i < intersects.length; i++) {
+            if (intersects[i].object === earthMesh) {
+                earthDistance = intersects[i].distance;
+                break; // intersects is sorted by distance from camera
+            }
+        }
+
+        // 2. Find the best satellite in front of the Earth, closest to the mouse cursor
+        for (let i = 0; i < intersects.length; i++) {
+            const hit = intersects[i];
+
+            if (hit.object === satPoints && hit.index !== undefined) {
+                // If the satellite is further away than the Earth crust, it's on the back side! Ignore it.
+                if (hit.distance > earthDistance) continue;
+
+                const sat = satellites[hit.index];
+                // Ignore if it's currently hidden by the category filter
+                if (currentFilter !== 'ALL' && sat.category !== currentFilter) continue;
+
+                // Prioritize the satellite visually closest to the mouse cursor (smallest distanceToRay)
+                // rather than just the one closest to the camera.
+                if (hit.distanceToRay < minRayDist) {
+                    minRayDist = hit.distanceToRay;
+                    bestSat = sat;
+                }
+            }
+        }
+
+        if (bestSat) {
+            activeSatSelected = bestSat;
+            satName.textContent = bestSat.name;
+            satId.textContent = bestSat.id;
+            satCat.textContent = bestSat.category;
+
+            const pv = satellite.propagate(bestSat.satrec, new Date());
+            if (pv.position && pv.velocity) {
+                satAlt.textContent = (Math.sqrt(pv.position.x**2 + pv.position.y**2 + pv.position.z**2) - earthRadius).toFixed(1);
+                satVel.textContent = Math.sqrt(pv.velocity.x**2 + pv.velocity.y**2 + pv.velocity.z**2).toFixed(2);
+            }
+
+            overlay.classList.remove('hidden');
+        } else {
+            overlay.classList.add('hidden');
+            activeSatSelected = null;
+        }
+    });
+
+    document.getElementById('set-primary-btn').onclick = () => {
+        if(activeSatSelected) {
+            primaryTarget = activeSatSelected;
+            updateMissionControl();
+        }
+    };
+
+    document.getElementById('set-secondary-btn').onclick = () => {
+        if(activeSatSelected) {
+            secondaryTarget = activeSatSelected;
+            updateMissionControl();
+        }
+    };
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+</script>
+{% endblock %}

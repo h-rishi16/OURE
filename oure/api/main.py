@@ -3,6 +3,7 @@ import tempfile
 
 from celery.result import AsyncResult
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi.responses import RedirectResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, Field, field_validator
 
@@ -47,6 +48,12 @@ class TaskSubmitRequest(BaseModel):
         if len(v) > 1000:
             raise ValueError("Maximum 1,000 secondary IDs per screening task.")
         return v
+
+
+@app.get("/", include_in_schema=False)
+def root_redirect() -> RedirectResponse:
+    """Redirect root to the UI dashboard."""
+    return RedirectResponse(url="/ui/")
 
 
 @app.get("/health")

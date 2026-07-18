@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/risk/calculator.py
-# hypothesis_version: 6.151.10
-
-[0.0, 1e-06, 20.0, 1000.0, 3600.0, 1000, 'GREEN', 'SKIPPED_SINGULAR']
