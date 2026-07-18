@@ -39,7 +39,7 @@ async def get_tles() -> PlainTextResponse:
     cache_file = await fetch_active_tles()
     if cache_file and Path(cache_file).exists():
         with open(cache_file, "r") as f:
-            return f.read()
+            return PlainTextResponse(f.read())
     raise HTTPException(status_code=500, detail="Could not fetch TLEs")
 
 
