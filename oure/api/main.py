@@ -3,6 +3,7 @@ import tempfile
 
 from celery.result import AsyncResult
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, Field, field_validator
@@ -19,6 +20,14 @@ app = FastAPI(
     title="OURE API",
     version="1.0.0",
     description="Orbital Uncertainty & Risk Engine API",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Instrument the app for Prometheus monitoring
@@ -134,3 +143,75 @@ async def analyze_cdm(
         # Guaranteed cleanup regardless of where an exception occurred
         if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)
+
+
+class PairRequest(BaseModel):
+    primary_id: str
+    secondary_id: str
+
+
+@app.post("/analyze/pair", response_model=RiskResponse)
+def analyze_pair_sync(req: PairRequest) -> RiskResponse:
+    from oure.cli.utils import _default_covariance, _tle_to_initial_state
+    from oure.conjunction.assessor import ConjunctionAssessor
+    from oure.core.config import settings
+    from oure.data.noaa import NOAASolarFluxFetcher
+    from oure.data.spacetrack import SpaceTrackFetcher
+    from oure.physics.factory import PropagatorFactory
+    from oure.risk.calculator import RiskCalculator
+
+    tle_fetcher = SpaceTrackFetcher(
+        username=settings.spacetrack_user,
+        password=settings.spacetrack_pass,
+    )
+    flux_fetcher = NOAASolarFluxFetcher()
+
+    records = {
+        r.sat_id: r
+        for r in tle_fetcher.fetch(sat_ids=[req.primary_id, req.secondary_id])
+    }
+    flux = flux_fetcher.get_current_f107()
+
+    if req.primary_id not in records or req.secondary_id not in records:
+        raise HTTPException(
+            status_code=404, detail="Could not fetch TLEs for one or both satellites."
+        )
+
+    primary_tle = records[req.primary_id]
+    primary_state = _tle_to_initial_state(primary_tle)
+    primary_prop = PropagatorFactory.build(primary_tle, solar_flux=flux)
+    primary_cov = _default_covariance(req.primary_id)
+
+    secondary_tle = records[req.secondary_id]
+    secondary_state = _tle_to_initial_state(secondary_tle)
+    secondary_prop = PropagatorFactory.build(secondary_tle, solar_flux=flux)
+    secondary_cov = _default_covariance(req.secondary_id)
+
+    secondaries_data = [(secondary_state, secondary_cov, secondary_prop)]
+
+    assessor = ConjunctionAssessor(screening_distance_km=50.0)
+    events = assessor.find_conjunctions(
+        primary_state,
+        primary_cov,
+        primary_prop,
+        secondaries_data,
+        look_ahead_hours=72.0,
+    )
+
+    if not events:
+        raise HTTPException(
+            status_code=404, detail="No conjunction event found within 72 hours."
+        )
+
+    calculator = RiskCalculator(hard_body_radius_m=20.0)
+    res = calculator.compute_pc(events[0])
+
+    return RiskResponse(
+        primary_id=res.conjunction.primary_id,
+        secondary_id=res.conjunction.secondary_id,
+        tca=res.conjunction.tca.isoformat(),
+        pc=res.pc,
+        warning_level=res.warning_level,
+        miss_distance_km=res.conjunction.miss_distance_km,
+        rel_velocity_km_s=res.conjunction.relative_velocity_km_s,
+    )
