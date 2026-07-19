@@ -112,7 +112,8 @@ function Satellites({
   focusSatId,
   secondarySatId,
   controlsRef,
-  timeOffsetMinutes = 0
+  timeOffsetMinutes = 0,
+  isShattered = false
 }: {
   tleData: string[],
   filter: string,
@@ -429,6 +430,7 @@ function Satellites({
     </mesh>
       <Trajectory focusSatId={focusSatId} satellites={satellites} color="#ff0a2a" />
       <Trajectory focusSatId={secondarySatId} satellites={satellites} color="#ffb703" />
+      <DebrisCloud originSatId={secondarySatId} satellites={satellites} active={isShattered} />
     </>
   );
 }
@@ -495,7 +497,8 @@ export default function Globe({
   onSelectSat: (sat: SatelliteData) => void,
   focusSatId?: string | null,
   secondarySatId?: string | null,
-  timeOffsetMinutes?: number
+  timeOffsetMinutes?: number,
+  isShattered?: boolean
 }) {
   manualTimeOffset = timeOffsetMinutes * 60000;
   const [autoRotate, setAutoRotate] = useState(true);
@@ -517,7 +520,7 @@ export default function Globe({
 
         <Earth />
 
-        <Satellites tleData={tleData} filter={filter} onSelectSat={onSelectSat} focusSatId={focusSatId} secondarySatId={secondarySatId} controlsRef={controlsRef} timeOffsetMinutes={timeOffsetMinutes} />
+        <Satellites tleData={tleData} filter={filter} onSelectSat={onSelectSat} focusSatId={focusSatId} secondarySatId={secondarySatId} controlsRef={controlsRef} timeOffsetMinutes={timeOffsetMinutes} isShattered={isShattered} />
 
         <OrbitControls
           ref={controlsRef}
@@ -531,5 +534,96 @@ export default function Globe({
         />
       </Canvas>
     </div>
+  );
+}
+
+function DebrisCloud({ originSatId, satellites, active }: { originSatId?: string | null, satellites: SatelliteData[], active: boolean }) {
+  const count = 5000;
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  
+  const [matrices, colors, velocities, startPos] = useMemo(() => {
+    if (!active || !originSatId) return [new Float32Array(0), new Float32Array(0), [], new THREE.Vector3()];
+    
+    const sat = satellites.find(s => s.id === originSatId);
+    if (!sat) return [new Float32Array(0), new Float32Array(0), [], new THREE.Vector3()];
+    
+    // Calculate initial position based on standard time
+    const date = new Date(initialTime + simElapsedTime + manualTimeOffset);
+    const posVel = satellite.propagate(sat.satrec, date);
+    let sPos = new THREE.Vector3();
+    let baseVel = new THREE.Vector3();
+    if (posVel.position && posVel.velocity) {
+       const p = posVel.position as satellite.EciVec3<number>;
+       const v = posVel.velocity as satellite.EciVec3<number>;
+       sPos.set(p.x, p.z, -p.y);
+       baseVel.set(v.x, v.z, -v.y).multiplyScalar(80); // Scale velocity for hypervelocity shatter effect
+    }
+    
+    const m = new Float32Array(count * 16);
+    const c = new Float32Array(count * 3);
+    const vels: THREE.Vector3[] = [];
+    
+    const dummy = new THREE.Object3D();
+    const color = new THREE.Color("#ff3300");
+    
+    for (let i = 0; i < count; i++) {
+      dummy.position.copy(sPos);
+      
+      // Random spread around the explosion epicenter
+      dummy.position.x += (Math.random() - 0.5) * 80;
+      dummy.position.y += (Math.random() - 0.5) * 80;
+      dummy.position.z += (Math.random() - 0.5) * 80;
+      
+      const scale = Math.random() * 0.8 + 0.2;
+      dummy.scale.set(scale, scale, scale);
+      dummy.updateMatrix();
+      dummy.matrix.toArray(m, i * 16);
+      
+      // Gradient from yellow/orange to dark red
+      c[i * 3] = 1.0;
+      c[i * 3 + 1] = Math.random() * 0.5;
+      c[i * 3 + 2] = 0.0;
+      
+      // Explosion velocity (base + random spherical spread + some backward ricochet)
+      const spread = new THREE.Vector3(
+         (Math.random() - 0.5) * 350,
+         (Math.random() - 0.5) * 350,
+         (Math.random() - 0.5) * 350
+      );
+      vels.push(baseVel.clone().add(spread));
+    }
+    return [m, c, vels, sPos];
+  }, [active, originSatId, satellites]);
+
+  useFrame((state, delta) => {
+    if (!active || !meshRef.current || velocities.length === 0) return;
+    const dummy = new THREE.Object3D();
+    
+    for (let i = 0; i < count; i++) {
+       meshRef.current.getMatrixAt(i, dummy.matrix);
+       dummy.position.setFromMatrixPosition(dummy.matrix);
+       
+       // Update position using hypervelocity
+       dummy.position.addScaledVector(velocities[i], delta);
+       
+       // Add Earth gravity curvature
+       const gravity = dummy.position.clone().normalize().multiplyScalar(-300 * delta);
+       velocities[i].add(gravity);
+       
+       dummy.updateMatrix();
+       meshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  });
+
+  if (!active || matrices.length === 0) return null;
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
+      <icosahedronGeometry args={[4, 0]}>
+        <instancedBufferAttribute attach="attributes-color" args={[colors, 3]} />
+      </icosahedronGeometry>
+      <meshBasicMaterial vertexColors transparent opacity={0.9} blending={THREE.AdditiveBlending} depthWrite={false} />
+    </instancedMesh>
   );
 }

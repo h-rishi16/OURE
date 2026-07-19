@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { SatelliteData } from '../components/Globe';
-import { Rocket, Target, Zap, X, Globe as GlobeIcon, Menu, Search, Clock } from 'lucide-react';
+import { Rocket, Target, Zap, X, Globe as GlobeIcon, Menu, Search, Clock, Skull } from 'lucide-react';
 import * as satellite from 'satellite.js';
 import CustomCursor from '../components/CustomCursor';
 
@@ -40,6 +40,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [timeOffsetMinutes, setTimeOffsetMinutes] = useState(0);
   const [isTimeScrubberOpen, setIsTimeScrubberOpen] = useState(false);
+  const [isShattered, setIsShattered] = useState(false);
 
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2 || tleData.length === 0) return [];
@@ -144,7 +145,7 @@ export default function Home() {
 
       {/* 3D Globe Container */}
       <div className="absolute inset-0 z-0 cursor-crosshair">
-        {!loading && <Globe tleData={tleData} filter={filter} onSelectSat={setActiveSat} focusSatId={activeSat?.id} secondarySatId={secondaryTarget?.id} timeOffsetMinutes={timeOffsetMinutes} />}
+        {!loading && <Globe tleData={tleData} filter={filter} onSelectSat={setActiveSat} focusSatId={activeSat?.id} secondarySatId={secondaryTarget?.id} timeOffsetMinutes={timeOffsetMinutes} isShattered={isShattered} />}
       </div>
 
       {/* Futuristic Analysis Modal */}
@@ -213,6 +214,15 @@ export default function Home() {
                   <span className="text-sm font-mono text-white tracking-widest">{analysisResult.rel_velocity_km_s.toFixed(2)} KM/S</span>
                 </div>
               </div>
+
+              {/* Shatter Simulation Trigger */}
+              <button 
+                onClick={() => setIsShattered(true)} 
+                className="w-full mt-6 bg-red-500/5 hover:bg-red-500/15 text-red-500 border border-red-500/20 py-4 rounded-xl uppercase tracking-widest text-[11px] font-bold flex items-center justify-center gap-3 transition-all duration-300"
+                style={{ boxShadow: 'inset 0 0 10px rgba(239,68,68,0.05)' }}
+              >
+                <Skull className="w-5 h-5" /> Simulate Shatter Event
+              </button>
             </div>
           )}
         </div>
