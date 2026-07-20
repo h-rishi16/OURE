@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def eci_to_ecef_vectorized(eci_coords, timestamps):
+def eci_to_ecef_vectorized(
+    eci_coords: np.ndarray, timestamps: np.ndarray
+) -> np.ndarray:
     """
     Vectorized transformation from ECI to ECEF coordinates.
     eci_coords: numpy array of shape (N, 3)

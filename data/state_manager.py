@@ -1,7 +1,11 @@
+from typing import Any, Dict, List
+
 import numpy as np
 
 
-def align_epochs(target_epoch, satellite_states):
+def align_epochs(
+    target_epoch: float, satellite_states: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
     """
     Aligns a list of satellite states to a target epoch using polynomial interpolation.
     Expects satellite_states to be a list of dictionaries, each containing:

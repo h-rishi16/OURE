@@ -1,7 +1,11 @@
+from typing import Any, Dict, List, Tuple
+
 import numpy as np
 
 
-def check_conjunctions(satellites, threshold=10.0):
+def check_conjunctions(
+    satellites: List[Dict[str, Any]], threshold: float = 10.0
+) -> List[Tuple[Any, Any, float]]:
     """
     Finds possible conjunctions (collisions) using AABB pre-filtering followed by SciPy distance.
     satellites: list of dicts with 'id', 'min_coords' (3,), 'max_coords' (3,), 'path' (N, 3)
