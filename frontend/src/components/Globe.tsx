@@ -61,8 +61,8 @@ function Earth() {
 
   return (
     <group ref={earthRef}>
-      {/* Invisible sphere to occlude satellites and borders on the far side */}
-      <mesh>
+      {/* Invisible sphere to occlude satellites and borders on the far side visually AND interactively */}
+      <mesh onPointerDown={(e) => e.stopPropagation()}>
         <sphereGeometry args={[earthRadius * 0.99, 64, 64]} />
         <meshBasicMaterial color="#0a0a0a" depthWrite={true} />
       </mesh>
@@ -112,7 +112,9 @@ function Satellites({
   focusSatId,
   secondarySatId,
   controlsRef,
-  timeOffsetMinutes = 0
+  timeOffsetMinutes = 0,
+  escapeTrajectory,
+  warningLevel
 }: {
   tleData: string[],
   filter: string,
@@ -120,7 +122,9 @@ function Satellites({
   focusSatId?: string | null,
   secondarySatId?: string | null,
   controlsRef?: React.MutableRefObject<any>,
-  timeOffsetMinutes?: number
+  timeOffsetMinutes?: number,
+  escapeTrajectory?: number[][] | null,
+  warningLevel?: string | null
 }) {
   const meshRef = useRef<THREE.Points>(null);
   const ellipsoidRef = useRef<THREE.Mesh>(null);
@@ -219,10 +223,10 @@ function Satellites({
     if (focusSatId) {
       const idx = satellites.findIndex(s => s.id === focusSatId);
       if (idx !== -1) {
-        // Blazing Neon Red Highlight for max contrast
-        colArray[idx * 3] = 1.0;     // Pure Red
-        colArray[idx * 3 + 1] = 0.05; // Tiny bit of green for warmth
-        colArray[idx * 3 + 2] = 0.05; // Tiny bit of blue
+        // Neon Cyan Highlight for primary selection (avoids false-alarm red when just browsing)
+        colArray[idx * 3] = 0.0;
+        colArray[idx * 3 + 1] = 1.0;
+        colArray[idx * 3 + 2] = 1.0;
       }
     }
 
@@ -423,17 +427,46 @@ function Satellites({
         depthWrite={false}
       />
     </points>
-    <mesh ref={ellipsoidRef} visible={false} scale={[0.5, 3.0, 0.5]}>
-      <sphereGeometry args={[80, 32, 32]} />
-      <meshBasicMaterial color="#ff0000" transparent opacity={0.6} blending={THREE.AdditiveBlending} depthWrite={false} />
-    </mesh>
-      <Trajectory focusSatId={focusSatId} satellites={satellites} color="#ff0a2a" />
-      <Trajectory focusSatId={secondarySatId} satellites={satellites} color="#ffb703" />
+    <group ref={ellipsoidRef} visible={false}>
+      {/* Inner Core */}
+      <mesh scale={
+        warningLevel === 'RED' ? [0.5, 3.0, 0.5] : [0.3, 1.5, 0.3]
+      }>
+        <sphereGeometry args={[80, 32, 32]} />
+        <meshBasicMaterial
+          color={warningLevel === 'RED' ? "#ef4444" : "#ffffff"}
+          transparent opacity={0.1} blending={THREE.AdditiveBlending} depthWrite={false}
+        />
+      </mesh>
+
+      {/* Outer Wireframe Math Model */}
+      <mesh scale={
+        warningLevel === 'RED' ? [0.52, 3.1, 0.52] : [0.32, 1.55, 0.32]
+      }>
+        <sphereGeometry args={[80, 16, 16]} />
+        <meshBasicMaterial
+          color={warningLevel === 'RED' ? "#ef4444" : "#ffffff"}
+          wireframe={true}
+          transparent opacity={0.3} blending={THREE.AdditiveBlending} depthWrite={false}
+        />
+      </mesh>
+    </group>
+      <Trajectory focusSatId={focusSatId} satellites={satellites} color="#00ffff" timeOffsetMinutes={timeOffsetMinutes} />
+      <Trajectory focusSatId={secondarySatId} satellites={satellites} color="#eab308" timeOffsetMinutes={timeOffsetMinutes} />
+      {escapeTrajectory && escapeTrajectory.length > 0 && (
+        <Line
+          points={escapeTrajectory.map(p => new THREE.Vector3(p[0], p[2], -p[1]))}
+          color="#00ffff"
+          lineWidth={2.5}
+          transparent
+          opacity={0.9}
+        />
+      )}
     </>
   );
 }
 
-function Trajectory({ focusSatId, satellites, color = "#ff0a2a" }: { focusSatId?: string | null, satellites: SatelliteData[], color?: string }) {
+function Trajectory({ focusSatId, satellites, color = "#ff0a2a", timeOffsetMinutes }: { focusSatId?: string | null, satellites: SatelliteData[], color?: string, timeOffsetMinutes: number }) {
   const points = useMemo(() => {
     if (!focusSatId) return [];
     const sat = satellites.find(s => s.id === focusSatId);
@@ -452,7 +485,7 @@ function Trajectory({ focusSatId, satellites, color = "#ff0a2a" }: { focusSatId?
       }
     }
     return pts;
-  }, [focusSatId, satellites]);
+  }, [focusSatId, satellites, timeOffsetMinutes]);
 
   if (points.length < 2) return null;
 
@@ -488,14 +521,18 @@ export default function Globe({
   onSelectSat,
   focusSatId,
   secondarySatId,
-  timeOffsetMinutes = 0
+  timeOffsetMinutes = 0,
+  escapeTrajectory,
+  warningLevel
 }: {
   tleData: string[],
   filter: string,
   onSelectSat: (sat: SatelliteData) => void,
   focusSatId?: string | null,
   secondarySatId?: string | null,
-  timeOffsetMinutes?: number
+  timeOffsetMinutes?: number,
+  escapeTrajectory?: number[][] | null,
+  warningLevel?: string | null
 }) {
   manualTimeOffset = timeOffsetMinutes * 60000;
   const [autoRotate, setAutoRotate] = useState(true);
@@ -517,7 +554,17 @@ export default function Globe({
 
         <Earth />
 
-        <Satellites tleData={tleData} filter={filter} onSelectSat={onSelectSat} focusSatId={focusSatId} secondarySatId={secondarySatId} controlsRef={controlsRef} timeOffsetMinutes={timeOffsetMinutes} />
+        <Satellites
+          tleData={tleData}
+          filter={filter}
+          onSelectSat={onSelectSat}
+          focusSatId={focusSatId}
+          secondarySatId={secondarySatId}
+          controlsRef={controlsRef}
+          timeOffsetMinutes={timeOffsetMinutes}
+          escapeTrajectory={escapeTrajectory}
+          warningLevel={warningLevel}
+        />
 
         <OrbitControls
           ref={controlsRef}
