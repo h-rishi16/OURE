@@ -1,8 +1,10 @@
+from typing import Any, List
+
 import numpy as np
 from scipy.integrate import solve_ivp
 
 
-def compute_derivatives(t, state):
+def compute_derivatives(t: float, state: np.ndarray) -> List[float]:
     """
     Computes the derivatives for the orbital propagation.
     state = [x, y, z, vx, vy, vz]
@@ -15,10 +17,12 @@ def compute_derivatives(t, state):
     mu = 398600.4418  # Earth's gravitational parameter in km^3/s^2
     ax, ay, az = -mu * r / r_norm**3
 
-    return [vx, vy, vz, ax, ay, az]
+    return [float(vx), float(vy), float(vz), float(ax), float(ay), float(az)]
 
 
-def propagate_orbit(initial_state, t_span, t_eval=None):
+def propagate_orbit(
+    initial_state: np.ndarray, t_span: List[float], t_eval: Any = None
+) -> Any:
     """
     Propagates the orbit using scipy.integrate.solve_ivp with DOP853.
     """

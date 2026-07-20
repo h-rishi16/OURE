@@ -2,9 +2,10 @@ import argparse
 import json
 import signal
 import sys
+from typing import Any
 
 
-def handle_sigint(sig, frame):
+def handle_sigint(sig: int, frame: Any) -> None:
     print("\nSimulation paused and saved.")
     # Dump recovery state
     state = {"status": "paused", "message": "Interrupted by user"}
@@ -13,7 +14,7 @@ def handle_sigint(sig, frame):
     sys.exit(0)
 
 
-def main():
+def main() -> None:
     # Register SIGINT handler
     signal.signal(signal.SIGINT, handle_sigint)
 

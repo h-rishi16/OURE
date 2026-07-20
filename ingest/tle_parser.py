@@ -1,7 +1,8 @@
 import logging
+from typing import Any, Dict, List
 
 
-def parse_tles(file_path):
+def parse_tles(file_path: str) -> List[Dict[str, Any]]:
     """
     Parses raw Two-Line Element (TLE) text files into structured Python dictionaries.
     Includes strict validation and SGP4 checksum validation.
@@ -24,7 +25,7 @@ def parse_tles(file_path):
 
     logger.addHandler(fh)
 
-    def compute_checksum(line):
+    def compute_checksum(line: str) -> int:
         """Computes the SGP4 checksum for a TLE line."""
         checksum = 0
         for char in line[:-1]:

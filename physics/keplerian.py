@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def convert_state_to_equinoctial(state_vector):
+def convert_state_to_equinoctial(state_vector: np.ndarray) -> np.ndarray:
     """
     Fallback: Converts state vector to Equinoctial elements.
     Dummy implementation to bypass singularity.
@@ -12,7 +12,7 @@ def convert_state_to_equinoctial(state_vector):
     return np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 
-def convert_coordinates(state_vector):
+def convert_coordinates(state_vector: np.ndarray) -> np.ndarray:
     """
     Converts state vector (position/velocity) to Keplerian elements.
     Handles singularity issues (e=0, i=0) by falling back to Equinoctial.
