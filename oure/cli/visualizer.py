@@ -18,7 +18,9 @@ def visualize_conjunction(
 
     # Earth Sphere (Radius ~ 6371 km)
     R_earth = 6371.0
-    u, v = np.mgrid[0 : 2 * np.pi : 50j, 0 : np.pi : 25j]
+    u = np.linspace(0, 2 * np.pi, 50)
+    v = np.linspace(0, np.pi, 25)
+    u, v = np.meshgrid(u, v)
     x = R_earth * np.cos(u) * np.sin(v)
     y = R_earth * np.sin(u) * np.sin(v)
     z = R_earth * np.cos(v)
