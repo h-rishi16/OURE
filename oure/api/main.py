@@ -215,3 +215,204 @@ def analyze_pair_sync(req: PairRequest) -> RiskResponse:
         miss_distance_km=res.conjunction.miss_distance_km,
         rel_velocity_km_s=res.conjunction.relative_velocity_km_s,
     )
+
+
+class SensorRequest(BaseModel):
+    primary_id: str
+    secondary_id: str
+    sensor_noise_m: float = 10.0
+
+
+class SensorResponse(BaseModel):
+    pc: float
+    warning_level: str
+    updated_covariance: list[list[float]]
+
+
+@app.post("/simulate/sensor", response_model=SensorResponse)
+def simulate_sensor_tasking(req: SensorRequest) -> SensorResponse:
+    from datetime import timedelta
+
+    import numpy as np
+
+    from oure.cli.utils import _default_covariance, _tle_to_initial_state
+    from oure.conjunction.tca_finder import TCARefinementEngine
+    from oure.core.config import settings
+    from oure.core.models import ConjunctionEvent, CovarianceMatrix
+    from oure.data.noaa import NOAASolarFluxFetcher
+    from oure.data.spacetrack import SpaceTrackFetcher
+    from oure.physics.numerical import NumericalPropagator
+    from oure.risk.calculator import RiskCalculator
+    from oure.uncertainty.sensor import SensorTaskingSimulator
+
+    tle_fetcher = SpaceTrackFetcher(
+        username=settings.spacetrack_user,
+        password=settings.spacetrack_pass,
+    )
+    flux_fetcher = NOAASolarFluxFetcher()
+
+    records = {
+        r.sat_id: r
+        for r in tle_fetcher.fetch(sat_ids=[req.primary_id, req.secondary_id])
+    }
+    flux = flux_fetcher.get_current_f107()
+
+    if req.primary_id not in records or req.secondary_id not in records:
+        raise HTTPException(
+            status_code=404, detail="Could not fetch TLEs for one or both satellites."
+        )
+
+    p_state = _tle_to_initial_state(records[req.primary_id])
+    s_state = _tle_to_initial_state(records[req.secondary_id])
+
+    p_cov = _default_covariance(req.primary_id)
+    s_cov_orig = _default_covariance(req.secondary_id)
+
+    stale_matrix = s_cov_orig.matrix.copy()
+    stale_matrix[:3, :3] = np.eye(3) * 25.0
+    s_cov_stale = CovarianceMatrix(
+        matrix=stale_matrix, epoch=s_cov_orig.epoch, sat_id=s_cov_orig.sat_id
+    )
+
+    base_prop = NumericalPropagator(solar_flux=flux)
+    tca_finder = TCARefinementEngine()
+
+    search_start = p_state.epoch
+    search_end = search_start + timedelta(hours=72)
+
+    tca_result = tca_finder.find_tca(
+        p_state, base_prop, s_state, base_prop, search_start, search_end
+    )
+
+    if not tca_result:
+        raise HTTPException(
+            status_code=404, detail="No collision detected in look-ahead window."
+        )
+
+    tca, miss = tca_result
+    p_tca = base_prop.propagate_to(p_state, tca)
+    s_tca = base_prop.propagate_to(s_state, tca)
+    v_rel = float(np.linalg.norm(p_tca.v - s_tca.v))
+
+    simulator = SensorTaskingSimulator(sensor_noise_m=req.sensor_noise_m)
+    s_cov_updated = simulator.simulate_radar_update(s_cov_stale)
+
+    event_updated = ConjunctionEvent(
+        primary_id=req.primary_id,
+        secondary_id=req.secondary_id,
+        tca=tca,
+        miss_distance_km=miss,
+        relative_velocity_km_s=v_rel,
+        primary_state=p_tca,
+        secondary_state=s_tca,
+        primary_covariance=p_cov,
+        secondary_covariance=s_cov_updated,
+    )
+    risk_calc = RiskCalculator()
+    updated_risk = risk_calc.compute_pc(event_updated)
+
+    return SensorResponse(
+        pc=updated_risk.pc,
+        warning_level=updated_risk.warning_level,
+        updated_covariance=s_cov_updated.matrix.tolist(),
+    )
+
+
+class AvoidRequest(BaseModel):
+    primary_id: str
+    secondary_id: str
+    burn_time_before_tca_hours: float = 12.0
+
+
+class AvoidResponse(BaseModel):
+    dv_km_s: list[float]
+    final_pc: float
+    escape_trajectory: list[list[float]]
+
+
+@app.post("/simulate/avoid", response_model=AvoidResponse)
+def simulate_avoidance(req: AvoidRequest) -> AvoidResponse:
+    from datetime import timedelta
+
+    from oure.cli.utils import _default_covariance, _tle_to_initial_state
+    from oure.conjunction.tca_finder import TCARefinementEngine
+    from oure.core.config import settings
+    from oure.data.noaa import NOAASolarFluxFetcher
+    from oure.data.spacetrack import SpaceTrackFetcher
+    from oure.physics.maneuver import Maneuver, ManeuverPropagator
+    from oure.physics.numerical import NumericalPropagator
+    from oure.risk.optimizer import ManeuverOptimizer
+
+    tle_fetcher = SpaceTrackFetcher(
+        username=settings.spacetrack_user,
+        password=settings.spacetrack_pass,
+    )
+    flux_fetcher = NOAASolarFluxFetcher()
+
+    records = {
+        r.sat_id: r
+        for r in tle_fetcher.fetch(sat_ids=[req.primary_id, req.secondary_id])
+    }
+    flux = flux_fetcher.get_current_f107()
+
+    if req.primary_id not in records or req.secondary_id not in records:
+        raise HTTPException(
+            status_code=404, detail="Could not fetch TLEs for one or both satellites."
+        )
+
+    p_state = _tle_to_initial_state(records[req.primary_id])
+    s_state = _tle_to_initial_state(records[req.secondary_id])
+
+    p_cov = _default_covariance(req.primary_id)
+    s_cov = _default_covariance(req.secondary_id)
+
+    base_prop = NumericalPropagator(solar_flux=flux)
+    tca_finder = TCARefinementEngine()
+
+    search_start = p_state.epoch
+    search_end = search_start + timedelta(hours=72)
+
+    tca_result = tca_finder.find_tca(
+        p_state, base_prop, s_state, base_prop, search_start, search_end
+    )
+
+    if not tca_result:
+        raise HTTPException(
+            status_code=404, detail="No collision detected in look-ahead window."
+        )
+
+    tca, miss = tca_result
+
+    burn_epoch = tca - timedelta(hours=req.burn_time_before_tca_hours)
+    optimizer = ManeuverOptimizer(
+        base_prop=base_prop,
+        primary_state=p_state,
+        secondary_state=s_state,
+        primary_cov=p_cov,
+        secondary_cov=s_cov,
+        burn_epoch=burn_epoch,
+        target_pc=1e-5,
+    )
+    result = optimizer.optimize()
+
+    if not result.success:
+        raise HTTPException(
+            status_code=500, detail=f"Optimization failed: {result.message}"
+        )
+
+    maneuver = Maneuver(burn_epoch=burn_epoch, delta_v_eci=result.optimal_dv_km_s)
+    man_prop = ManeuverPropagator(base_propagator=base_prop, maneuvers=[maneuver])
+
+    escape_traj = []
+    current_time = burn_epoch
+    end_time = tca + timedelta(hours=2)
+    while current_time <= end_time:
+        st = man_prop.propagate_to(p_state, current_time)
+        escape_traj.append(st.r.tolist())
+        current_time += timedelta(minutes=5)
+
+    return AvoidResponse(
+        dv_km_s=result.optimal_dv_km_s.tolist(),
+        final_pc=result.final_pc,
+        escape_trajectory=escape_traj,
+    )
