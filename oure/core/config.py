@@ -17,8 +17,8 @@ class OUREConfig(BaseSettings):
     )
 
     # Space-Track Credentials (Required - no defaults)
-    spacetrack_user: str = Field(validation_alias="SPACETRACK_USER")
-    spacetrack_pass: str = Field(validation_alias="SPACETRACK_PASS")
+    spacetrack_user: str = Field(default="", validation_alias="SPACETRACK_USER")
+    spacetrack_pass: str = Field(default="", validation_alias="SPACETRACK_PASS")
 
     # Default Physics Parameters
     default_sigma_km: float = Field(
