@@ -16,7 +16,7 @@ services:
   # The Celery Worker for heavy physics tasks
   worker:
     build: .
-    command: celery -A oure.api.tasks.celery_app worker --loglevel=info
+    command: celery -A oure.api.celery_app worker --loglevel=info
     environment:
       - SPACETRACK_USER=${SPACETRACK_USER}
       - SPACETRACK_PASS=${SPACETRACK_PASS}

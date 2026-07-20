@@ -1,0 +1,4 @@
+# file: /app/oure/api/ui.py
+# hypothesis_version: 6.153.2
+
+[0.0, 0.02, 10.0, 72.0, 1000.0, 404, 500, '%Y-%m-%d %H:%M:%S', '/', '/analyze', '/api/tles', '/globe', '/ui', 'Could not fetch TLEs', 'GREEN', 'N/A', 'UI', 'UI Analysis failed', 'cdn', 'globe.html', 'hard_body_radius_m', 'index.html', 'miss_distance_km', 'oure.api.ui', 'pc', 'plot_html', 'primary_id', 'r', 'rel_velocity_km_s', 'request', 'result.html', 'secondary_id', 'sigma_bplane_km', 'tca', 'templates', 'warning_level']

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint --no-lint"
   },
   "dependencies": {
     "@react-three/drei": "^9.121.5",

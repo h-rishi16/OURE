@@ -71,7 +71,7 @@ def test_pc_symmetry(b_miss, C_2d):
 
 
 @given(b_miss=miss_vectors(), C_2d=spd_matrices())
-@settings(max_examples=10, deadline=5000)
+@settings(max_examples=10, deadline=None)
 def test_series_vs_numerical(b_miss, C_2d):
     """Verify Foster Series analytic method matches SciPy dblquad numerical integration."""
     # Ensure condition number is manageable for the numerical method

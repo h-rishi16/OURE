@@ -121,7 +121,8 @@ function Satellites({
   focusSatId?: string | null,
   secondarySatId?: string | null,
   controlsRef?: React.MutableRefObject<any>,
-  timeOffsetMinutes?: number
+  timeOffsetMinutes?: number,
+  isShattered?: boolean
 }) {
   const meshRef = useRef<THREE.Points>(null);
   const ellipsoidRef = useRef<THREE.Mesh>(null);
@@ -490,7 +491,8 @@ export default function Globe({
   onSelectSat,
   focusSatId,
   secondarySatId,
-  timeOffsetMinutes = 0
+  timeOffsetMinutes = 0,
+  isShattered = false
 }: {
   tleData: string[],
   filter: string,
@@ -550,8 +552,8 @@ function DebrisCloud({ originSatId, satellites, active }: { originSatId?: string
     // Calculate initial position based on standard time
     const date = new Date(initialTime + simElapsedTime + manualTimeOffset);
     const posVel = satellite.propagate(sat.satrec, date);
-    let sPos = new THREE.Vector3();
-    let baseVel = new THREE.Vector3();
+    const sPos = new THREE.Vector3();
+    const baseVel = new THREE.Vector3();
     if (posVel.position && posVel.velocity) {
        const p = posVel.position as satellite.EciVec3<number>;
        const v = posVel.velocity as satellite.EciVec3<number>;
@@ -595,9 +597,22 @@ function DebrisCloud({ originSatId, satellites, active }: { originSatId?: string
     return [m, c, vels, sPos];
   }, [active, originSatId, satellites]);
 
+  React.useEffect(() => {
+    if (!meshRef.current || matrices.length === 0) return;
+
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < count; i++) {
+      dummy.matrix.fromArray(matrices, i * 16);
+      meshRef.current.setMatrixAt(i, dummy.matrix);
+    }
+    meshRef.current.instanceMatrix.needsUpdate = true;
+  }, [matrices]);
+
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const tempGravity = useMemo(() => new THREE.Vector3(), []);
+
   useFrame((state, delta) => {
     if (!active || !meshRef.current || velocities.length === 0) return;
-    const dummy = new THREE.Object3D();
     
     for (let i = 0; i < count; i++) {
        meshRef.current.getMatrixAt(i, dummy.matrix);
@@ -607,8 +622,8 @@ function DebrisCloud({ originSatId, satellites, active }: { originSatId?: string
        dummy.position.addScaledVector(velocities[i], delta);
        
        // Add Earth gravity curvature
-       const gravity = dummy.position.clone().normalize().multiplyScalar(-300 * delta);
-       velocities[i].add(gravity);
+       tempGravity.copy(dummy.position).normalize().multiplyScalar(-300 * delta);
+       velocities[i].add(tempGravity);
        
        dummy.updateMatrix();
        meshRef.current.setMatrixAt(i, dummy.matrix);

@@ -150,7 +150,11 @@ class PairRequest(BaseModel):
     secondary_id: str
 
 
-@app.post("/analyze/pair", response_model=RiskResponse)
+@app.post(
+    "/analyze/pair",
+    response_model=RiskResponse,
+    dependencies=[Depends(require_api_key)],
+)
 def analyze_pair_sync(req: PairRequest) -> RiskResponse:
     from oure.cli.utils import _default_covariance, _tle_to_initial_state
     from oure.conjunction.assessor import ConjunctionAssessor
