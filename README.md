@@ -18,7 +18,7 @@ Built for mission-critical speed and mathematical rigor, OURE processes Space-Tr
 - **Sensor Fusion:** Extended Kalman Filter (EKF) updates to simulate commercial radar tasking and covariance collapse.
 - **KD-Tree Fleet Screening:** Distributed epoch-bucketed $O(N \log N)$ screening of entire satellite constellations against the full NORAD catalog.
 - **Enterprise Observability:** Fully instrumented FastAPI REST API and Celery/Redis background workers, seamlessly integrated with **Prometheus and Grafana** for real-time physics engine throughput and risk quantification latency monitoring.
-- **Interactive Visualizations:** 3D ECI encounter geometry and 2D B-Plane cross-sections using Plotly, wrapped in a dynamic FastAPI + HTMX Operations Dashboard.
+- **Interactive Visualizations:** 3D ECI encounter geometry and massive orbital fleet visualization using Next.js, React Three Fiber, and Three.js.
 
 ## Installation & Deployment
 
@@ -29,11 +29,16 @@ OURE can be run locally via CLI, launched via a lightweight web interface, or de
 You can install OURE globally using `pip` (or `uv`):
 
 ```bash
-# Install the OURE package and its dependencies
+# Install the OURE backend package and its dependencies
 pip install oure
 
-# Run the lightweight FastAPI + HTMX stack locally
+# Start the FastAPI backend
 uvicorn oure.api.main:app --reload
+
+# In a new terminal, start the Next.js 3D Frontend
+cd frontend
+npm install
+npm run dev
 ```
 
 ### 2. Enterprise Stack (Docker Compose)
@@ -49,7 +54,7 @@ cd oure
 docker compose up --build -d
 ```
 
-* **Operations Dashboard:** [http://localhost:8000/ui/](http://localhost:8000/ui/)
+* **Operations Dashboard (Next.js 3D Globe):** [http://localhost:3000](http://localhost:3000)
 * **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 * **Grafana (Observability):** [http://localhost:3000](http://localhost:3000) *(Login: admin / admin)*
 * **Prometheus Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
