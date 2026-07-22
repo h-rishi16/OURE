@@ -67,13 +67,13 @@ oure report
 ---
 
 ## 7. Enterprise Web Dashboard & API
-**What it does:** OURE isn't just a CLI. It includes a decoupled FastAPI REST backend and a dynamic HTMX frontend. This allows you to integrate OURE into larger enterprise systems, submit massive screening tasks to background Celery workers, and view interactive Plotly 3D visualizations in your browser.
+**What it does:** OURE isn't just a CLI. It includes a decoupled FastAPI REST backend and a dynamic Next.js 3D frontend. This allows you to integrate OURE into larger enterprise systems, submit massive screening tasks to background Celery workers, and view interactive 3D satellite visualizations in your browser.
 
 **Example:** Launch the full enterprise stack locally (API, Celery workers, Redis, Prometheus, and Grafana) using Docker.
 ```bash
 docker compose up --build -d
 ```
 Then navigate to:
-- **Operations Dashboard:** [http://localhost:8000/ui/](http://localhost:8000/ui/)
+- **Operations Dashboard:** [http://localhost:3000](http://localhost:3000)
 - **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 - **Grafana Metrics:** [http://localhost:3000](http://localhost:3000)

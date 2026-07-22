@@ -49,7 +49,7 @@ oure monitor --primary 25544 --secondaries-file my_catalog.json --interval 3600
 
 OURE includes a modern web interface for visual monitoring.
 
-*   **To Launch:** Run `uvicorn oure.api.main:app` and go to `http://localhost:8000/ui/`.
+*   **To Launch:** Run `npm run dev` in the `frontend` directory and go to `http://localhost:3000`.
 *   **Live Status:** View a real-time dashboard of all tracked threats.
 *   **CDM Analysis:** Upload official JSON Conjunction Data Messages (CDMs) for independent verification.
 *   **3D Visualization:** See the encounter geometry in interactive 3D (ECI frame).
