@@ -20,10 +20,10 @@ def visualize_conjunction(
     R_earth = 6371.0
     u = np.linspace(0, 2 * np.pi, 50)
     v = np.linspace(0, np.pi, 25)
-    u, v = np.meshgrid(u, v)
-    x = R_earth * np.cos(u) * np.sin(v)
-    y = R_earth * np.sin(u) * np.sin(v)
-    z = R_earth * np.cos(v)
+    u_mesh, v_mesh = np.meshgrid(u, v)
+    x = R_earth * np.cos(u_mesh) * np.sin(v_mesh)
+    y = R_earth * np.sin(u_mesh) * np.sin(v_mesh)
+    z = R_earth * np.cos(v_mesh)
 
     fig.add_trace(
         go.Surface(
