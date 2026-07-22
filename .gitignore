@@ -37,6 +37,10 @@ build/
 results.json
 mock_results.json
 risk_history.html
+fleet_results.json
+recovery_state.json
+primaries.json
+secondaries.json
 
 # Ephemeral/Dev files
 cookies.txt
