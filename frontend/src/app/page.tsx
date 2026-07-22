@@ -63,6 +63,43 @@ export default function Home() {
   const [avoidResult, setAvoidResult] = useState<any>(null);
   const [mockConjunctions, setMockConjunctions] = useState<any[]>([]);
 
+  const generateRandomConjunctions = (lines?: string[]) => {
+    const dataToUse = lines || tleData;
+    if (!dataToUse || dataToUse.length === 0) return;
+    const ids: string[] = [];
+    for (let i = 0; i < dataToUse.length; i++) {
+      if (dataToUse[i].startsWith('1 ')) {
+        ids.push(dataToUse[i].substring(2, 7).trim());
+      }
+    }
+    if (ids.length < 10) return;
+
+    const newConjs = [];
+    for (let k = 0; k < 5; k++) {
+      const pId = ids[Math.floor(Math.random() * ids.length)];
+      let sId = ids[Math.floor(Math.random() * ids.length)];
+      while (sId === pId) sId = ids[Math.floor(Math.random() * ids.length)];
+
+      const r = Math.random();
+      let warning_level = 'GREEN';
+      let pc = 0.000001 * Math.random();
+      let miss = 10 + Math.random() * 20;
+
+      if (r > 0.8) {
+         warning_level = 'RED';
+         pc = 0.001 + Math.random() * 0.01;
+         miss = 0.5 + Math.random() * 2;
+      } else if (r > 0.5) {
+         warning_level = 'YELLOW';
+         pc = 0.00001 + Math.random() * 0.0009;
+         miss = 2 + Math.random() * 8;
+      }
+      newConjs.push({ primary_id: pId, secondary_id: sId, pc, warning_level, miss_distance_km: miss });
+    }
+    newConjs.sort((a,b) => b.pc - a.pc);
+    setMockConjunctions(newConjs);
+  };
+
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2 || tleData.length === 0) return [];
     const results = [];
@@ -85,27 +122,14 @@ export default function Home() {
   }, [searchQuery, tleData]);
 
   useEffect(() => {
-    fetch('/api/tles')
-      .then(res => res.text())
-      .then(data => {
-        const lines = data.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    fetch('/tles.txt')
+      .then(r => r.text())
+      .then(text => {
+        const lines = text.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
         setTleData(lines);
 
         // Ensure the mock conjunctions actually exist in the live catalog
-        const ids: string[] = [];
-        for (let i = 0; i < lines.length; i++) {
-          if (lines[i].startsWith('1 ')) {
-            ids.push(lines[i].substring(2, 7).trim());
-            if (ids.length >= 6) break;
-          }
-        }
-        if (ids.length >= 6) {
-          setMockConjunctions([
-            { primary_id: ids[0], secondary_id: ids[1], pc: 0.0034, warning_level: "RED", miss_distance_km: 1.2 },
-            { primary_id: ids[2], secondary_id: ids[3], pc: 0.000012, warning_level: "YELLOW", miss_distance_km: 9.1 },
-            { primary_id: ids[4], secondary_id: ids[5], pc: 0.000003, warning_level: "GREEN", miss_distance_km: 14.5 }
-          ]);
-        }
+        generateRandomConjunctions(lines);
 
         setLoading(false);
       })
@@ -146,8 +170,8 @@ export default function Home() {
     setAvoidResult(null);
     setEscapeTrajectory(null);
 
-    // Call the LIVE FastAPI Backend!
-    fetch('http://127.0.0.1:8000/analyze/pair', {
+    // Call the LIVE FastAPI Backend via Nginx Reverse Proxy
+    fetch('/api/analyze/pair', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -193,7 +217,7 @@ export default function Home() {
     if (!primaryTarget || !secondaryTarget) return;
     setAvoidState('computing');
 
-    fetch('http://127.0.0.1:8000/simulate/avoid', {
+    fetch('/api/simulate/avoid', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -225,21 +249,21 @@ export default function Home() {
 
         // Generate a fake escape trajectory relative to primary target
         const mockTraj = [];
-        let p_x = 0, p_y = 0, p_z = 0;
         if (primaryTarget && primaryTarget.satrec) {
-           const pv = satellite.propagate(primaryTarget.satrec, new Date());
-           if (pv.position && typeof pv.position !== 'boolean') {
-              p_x = (pv.position as any).x;
-              p_y = (pv.position as any).y;
-              p_z = (pv.position as any).z;
+           for (let i = 0; i <= 100; i++) {
+              const t = new Date(Date.now() + i * 60000); // 1 minute steps
+              const pv = satellite.propagate(primaryTarget.satrec, t);
+              if (pv.position && typeof pv.position !== 'boolean') {
+                 // Add 0.5km of altitude per minute as a mock maneuver drift!
+                 const drift = i * 0.5;
+                 const px = (pv.position as any).x;
+                 const py = (pv.position as any).y;
+                 const pz = (pv.position as any).z;
+                 const mag = Math.sqrt(px*px + py*py + pz*pz);
+                 const scale = (mag + drift) / mag;
+                 mockTraj.push([px * scale, py * scale, pz * scale]);
+              }
            }
-        }
-
-        for (let i = 0; i <= 100; i++) {
-           const dx = Math.sin(i * 0.1) * 50 * i;
-           const dy = Math.cos(i * 0.1) * 50 * i;
-           const dz = i * 20;
-           mockTraj.push([p_x + dx, p_y + dy, p_z + dz]);
         }
 
         setEscapeTrajectory(mockTraj);
@@ -484,7 +508,12 @@ export default function Home() {
 
             {sidebarView === 'analysis' && (
               <div className="flex flex-col gap-3 w-full">
-                <span className="text-[10px] uppercase tracking-widest text-[#525252] font-semibold mb-2">High-Risk Conjunctions</span>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] uppercase tracking-widest text-[#525252] font-semibold">High-Risk Conjunctions</span>
+                  <button onClick={() => generateRandomConjunctions()} className="text-[9px] uppercase tracking-widest text-[#a3a3a3] hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded">
+                    Refresh
+                  </button>
+                </div>
 
                 {mockConjunctions.map((res, i) => (
                   <div key={i} onClick={() => {

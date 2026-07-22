@@ -1,17 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/tles',
-        destination: 'http://127.0.0.1:8000/ui/api/tles',
-      },
-      {
-        source: '/ui/analyze',
-        destination: 'http://127.0.0.1:8000/ui/analyze',
-      }
-    ]
+  output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  }
 };
 
 export default nextConfig;

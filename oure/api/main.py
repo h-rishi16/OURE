@@ -4,7 +4,6 @@ import tempfile
 from celery.result import AsyncResult
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel, Field, field_validator
 
@@ -12,7 +11,6 @@ from oure.api.celery_app import celery_app
 from oure.api.middleware import require_api_key
 from oure.api.negotiate import router as negotiate_router
 from oure.api.tasks import run_fleet_screening
-from oure.api.ui import router as ui_router
 from oure.data.cdm_parser import CDMParser
 from oure.risk.calculator import RiskCalculator
 
@@ -34,7 +32,6 @@ app.add_middleware(
 Instrumentator().instrument(app).expose(app)
 
 app.include_router(negotiate_router)
-app.include_router(ui_router)
 
 
 class RiskResponse(BaseModel):
@@ -60,9 +57,9 @@ class TaskSubmitRequest(BaseModel):
 
 
 @app.get("/", include_in_schema=False)
-def root_redirect() -> RedirectResponse:
-    """Redirect root to the UI dashboard."""
-    return RedirectResponse(url="/ui/")
+def root_redirect() -> dict[str, str]:
+    """Root API endpoint."""
+    return {"status": "operational", "api_version": "1.0.0"}
 
 
 @app.get("/health")
