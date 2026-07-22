@@ -54,7 +54,7 @@ cd oure
 docker compose up --build -d
 ```
 
-* **Operations Dashboard (Next.js 3D Globe):** [http://localhost:3000](http://localhost:3000)
+* **Operations Dashboard (Next.js 3D Globe):** [http://localhost:3000](http://localhost:3000) (Live Demo: [http://92.4.73.195](http://92.4.73.195))
 * **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 * **Grafana (Observability):** [http://localhost:3000](http://localhost:3000) *(Login: admin / admin)*
 * **Prometheus Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
