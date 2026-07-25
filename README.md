@@ -3,7 +3,7 @@
 ![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)
 ![Coverage](https://img.shields.io/badge/coverage-86%25-brightgreen.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v1.1.0-orange.svg)
+![Version](https://img.shields.io/badge/version-v1.0.0-orange.svg)
 
 OURE is a high-performance, enterprise-grade Space Situational Awareness (SSA) platform designed for orbital risk prediction, collision avoidance optimization, fragmentation modeling, and massive fleet screening.
 
