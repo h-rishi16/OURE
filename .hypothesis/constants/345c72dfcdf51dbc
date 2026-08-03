@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/reporting/pdf_report.py
-# hypothesis_version: 6.153.2
-
-[200, 220, 260, 280, 300, 320, 340, 360, 400, 420, 440, 480, 500, 520, 540, 560, 600, 620, 640, 660, 680, 720, 750, '%Y-%m-%dT%H:%M:%S', '1. Executive Summary', '2. Object Details', '5. Metadata', 'Helvetica', 'Helvetica-Bold', 'N/A', 'RED', 'YELLOW', 'Z', '[ACTION REQUIRED]', '[MONITOR]', '[NOMINAL]']

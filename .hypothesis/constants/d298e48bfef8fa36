@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/risk/alert.py
-# hypothesis_version: 6.153.2
-
-[1e-05, 0.001, 'GREEN', 'RED', 'YELLOW']

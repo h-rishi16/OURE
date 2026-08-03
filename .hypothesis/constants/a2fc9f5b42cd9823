@@ -1,4 +1,0 @@
-# file: /app/oure/api/main.py
-# hypothesis_version: 6.153.2
-
-[1e-05, 10.0, 12.0, 20.0, 25.0, 50.0, 72.0, 400, 404, 500, 1000, '*', '.json', '/', '/analyze/cdm', '/analyze/pair', '/health', '/simulate/avoid', '/simulate/sensor', '/tasks/screen', '/tasks/{task_id}', '/ui/', '1.0.0', 'FAILURE', 'OURE API', 'PROGRESS', 'SUCCESS', 'error', 'meta', 'operational', 'oure.api', 'result', 'secondary_ids', 'state', 'status', 'submitted', 'task_id', 'version']

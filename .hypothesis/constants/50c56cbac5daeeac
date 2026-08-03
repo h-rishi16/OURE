@@ -1,4 +1,0 @@
-# file: /app/ingest/tle_parser.py
-# hypothesis_version: 6.153.2
-
-['-', '1 ', 'line1', 'line2', 'r', 'rejected_tles.log', 'sat_id', 'tle_parser']

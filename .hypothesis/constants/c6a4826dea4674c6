@@ -1,4 +1,0 @@
-# file: /app/oure/risk/conjunction.py
-# hypothesis_version: 6.153.2
-
-[10.0, 'id', 'max_coords', 'min_coords', 'path']
