@@ -10,6 +10,31 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+          
+      - name: Build Next.js Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          
+      - name: Transfer built assets to Oracle Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USERNAME }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          source: "frontend/.next"
+          target: "~/oure"
+          
       - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -17,16 +42,8 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script: |
-            # Navigate to the project directory
             cd ~/oure || exit
-
-            # Reset any local changes and pull the latest code
             git reset --hard origin/main
             git pull origin main
-
-            # Rebuild and restart the Docker containers
-            # Assumes keys.env exists in the project root on the server
             docker compose --env-file keys.env up --build -d
-
-            # Prune old dangling images to save disk space
             docker image prune -f

@@ -1,21 +1,10 @@
-FROM node:18-alpine AS builder
+FROM node:18-alpine
+
 WORKDIR /app
 
-# Install dependencies
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# Copy source and build
-COPY . .
-RUN npm run build
-
-FROM node:18-alpine AS runner
-WORKDIR /app
-
-# Copy built assets from builder stage
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/static ./.next/static
+COPY .next/standalone ./
+COPY public ./public
+COPY .next/static ./.next/static
 
 EXPOSE 3000
 ENV PORT 3000
