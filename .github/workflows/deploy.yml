@@ -49,9 +49,15 @@ jobs:
             git reset --hard origin/main
             git pull origin main
             
-            # Ensure the transferred .next folder is moved into the frontend directory
-            # because scp might have dropped it in ~ if the paths didn't perfectly align
+            # Completely wipe old Next.js build cache to prevent merging bugs
+            rm -rf ./frontend/.next
+            
+            # Copy fresh build from the SCP drop location
             cp -r ~/frontend/.next ./frontend/ 2>/dev/null || true
             
-            docker compose --env-file keys.env up --build -d
+            # Force Docker to completely rebuild the frontend without using cache
+            docker compose --env-file keys.env build --no-cache frontend
+            docker compose --env-file keys.env up -d
+            
+            # Cleanup
             docker image prune -f
