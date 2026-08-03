@@ -1,0 +1,32 @@
+name: Deploy to Oracle Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Execute Remote SSH Commands
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_HOST }}
+          username: ${{ secrets.ORACLE_USERNAME }}
+          key: ${{ secrets.ORACLE_SSH_KEY }}
+          script: |
+            # Navigate to the project directory
+            cd ~/oure || exit
+
+            # Reset any local changes and pull the latest code
+            git reset --hard origin/main
+            git pull origin main
+
+            # Rebuild and restart the Docker containers
+            # Assumes keys.env exists in the project root on the server
+            docker compose --env-file keys.env up --build -d
+
+            # Prune old dangling images to save disk space
+            docker image prune -f
