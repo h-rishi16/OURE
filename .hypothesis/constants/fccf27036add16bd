@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/cli/cmd_plot.py
-# hypothesis_version: 6.153.2
-
-['--event-idx', '--output', '--results-file', '-o', 'Risk Visualization', 'bplane_plot.html']

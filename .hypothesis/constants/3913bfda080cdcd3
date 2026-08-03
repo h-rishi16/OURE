@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/data/noaa.py
-# hypothesis_version: 6.153.2
-
-[15.0, 20.0, 150.0, 3600, 'Flux', 'Solar flux cache HIT', 'ninety_day_mean', 'noaa_f107_current', 'oure.data.noaa']

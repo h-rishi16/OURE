@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/physics/sgp4_propagator.py
-# hypothesis_version: 6.153.2
-
-[0.0, 1e-09, 0.5, 0.999999, 1.0, 2.5, 3.0, 60.0, 1000000.0, 'ijk,ik->ij']

@@ -1,4 +1,0 @@
-# file: /Users/hrishi/Projects/oure/oure/cli/cmd_sensor.py
-# hypothesis_version: 6.153.2
-
-[10.0, 25.0, '--primary', '--secondary', '--sensor-noise-m', '-p', '-s', 'After Radar Track', 'Alert Level', 'B-Plane σ_x', 'Before Radar Track', 'GREEN', 'Metric', 'RED', 'YELLOW', 'cyan', 'danger', 'info', 'right', 'success', 'warning', 'white']
