@@ -61,6 +61,11 @@ jobs:
             
             # Force Docker to completely rebuild
             docker compose --env-file keys.env build --no-cache frontend
-            docker compose --env-file keys.env up -d
+            
+            # Recreate frontend and force Nginx to recreate so its DNS cache updates
+            docker compose --env-file keys.env up -d --always-recreate-deps
+            
+            # Explicitly restart Nginx just to be 100% certain it flushes DNS
+            docker compose restart nginx
             
             docker image prune -f
