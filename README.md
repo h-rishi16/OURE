@@ -54,10 +54,18 @@ cd oure
 docker compose up --build -d
 ```
 
-* **Operations Dashboard (Next.js 3D Globe):** [http://localhost:3000](http://localhost:3000) (Live Demo: [http://92.4.73.195](http://92.4.73.195))
-* **API Documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Grafana (Observability):** [http://localhost:3000](http://localhost:3000) *(Login: admin / admin)*
-* **Prometheus Metrics:** [http://localhost:8000/metrics](http://localhost:8000/metrics)
+* **Operations Dashboard (Next.js 3D Globe):** [http://localhost](http://localhost) (Live Demo: [http://92.4.73.195](http://92.4.73.195))
+* **API Documentation:** [http://localhost/api/docs](http://localhost/api/docs)
+* **Grafana (Observability):** [http://localhost/grafana](http://localhost/grafana) *(Login: admin / admin)*
+* **Prometheus Metrics:** [http://localhost/prometheus](http://localhost/prometheus)
+
+### 3. Continuous Deployment (CI/CD)
+
+OURE is configured with a fully automated, RAM-optimized deployment pipeline via **GitHub Actions**.
+Any commit pushed to the `main` branch automatically triggers a deployment to the production server:
+1. GitHub runners compile the heavily optimized Next.js `standalone` build.
+2. Build artifacts are securely transferred to the remote server via SSH tar archives (preventing memory exhaustion on micro-VMs).
+3. The server safely rebuilds the Docker container with `--no-cache` and restarts the Nginx reverse proxy.
 
 ## CLI Usage
 
