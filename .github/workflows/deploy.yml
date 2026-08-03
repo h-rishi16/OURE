@@ -33,7 +33,7 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           source: "frontend/.next"
-          target: "~/oure"
+          target: "~/"
           
       - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
@@ -42,8 +42,16 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script: |
-            cd ~/oure || exit
+            # Try to enter the directory regardless of case (oure vs OURE)
+            cd ~/oure || cd ~/OURE || exit 1
+            
+            git fetch origin
             git reset --hard origin/main
             git pull origin main
+            
+            # Ensure the transferred .next folder is moved into the frontend directory
+            # because scp might have dropped it in ~ if the paths didn't perfectly align
+            cp -r ~/frontend/.next ./frontend/ 2>/dev/null || true
+            
             docker compose --env-file keys.env up --build -d
             docker image prune -f
