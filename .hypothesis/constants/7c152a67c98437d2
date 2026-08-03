@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/api/negotiate.py
+# hypothesis_version: 6.153.2
+
+[1e-06, 5.0, 50.0, 400, '/', '/negotiate', 'Negotiation', 'WE_WILL_MANEUVER', 'YOU_MUST_MANEUVER', 'oure.api.negotiate']

@@ -3,12 +3,35 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { SatelliteData } from '../components/Globe';
-import { Rocket, Target, Zap, X, Globe as GlobeIcon, Menu, Search, Clock } from 'lucide-react';
+import { Play, Pause, FastForward, Info, Settings, Search, AlertTriangle, Shield, Crosshair, Target, ExternalLink, ChevronRight, Rocket, Zap, X, Globe as GlobeIcon, Menu, Clock } from 'lucide-react';
 import * as satellite from 'satellite.js';
 import CustomCursor from '../components/CustomCursor';
 
 // Dynamically import Globe to avoid SSR issues with Three.js
 const Globe = dynamic(() => import('../components/Globe'), { ssr: false });
+
+const PixelAstronaut = () => {
+  // 0 = transparent, 1 = helmet (red-400), 2 = visor (red-900)
+  const pixels = [
+    0,0,0,1,1,1,1,0,0,0,
+    0,0,1,1,1,1,1,1,0,0,
+    0,1,1,2,2,2,2,1,1,0,
+    1,1,2,2,2,2,2,2,1,1,
+    1,1,2,2,0,0,2,2,1,1,
+    1,1,2,2,2,2,2,2,1,1,
+    0,1,1,2,2,2,2,1,1,0,
+    0,0,1,1,1,1,1,1,0,0,
+    0,0,0,1,1,1,1,0,0,0,
+    0,0,1,1,0,0,1,1,0,0
+  ];
+  return (
+    <div className="grid grid-cols-10 gap-[1px] w-12 h-12 mb-4 opacity-80">
+      {pixels.map((p, i) => (
+        <div key={i} className={p === 1 ? 'bg-red-400' : p === 2 ? 'bg-red-950' : p === 0 && i > 40 && i < 50 ? 'bg-red-200' : 'bg-transparent'} />
+      ))}
+    </div>
+  );
+};
 
 const FILTERS = [
   { id: 'ALL', label: 'All Satellites' },
@@ -42,6 +65,21 @@ export const formatProbability = (pc: number) => {
 export default function Home() {
   const [tleData, setTleData] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [introState, setIntroState] = useState<'mounting' | 'active' | 'fading' | 'hidden'>('mounting');
+
+  useEffect(() => {
+    if (!loading) {
+      if (typeof window !== 'undefined' && localStorage.getItem('oure_intro_skipped') === 'true') {
+        setIntroState('hidden');
+        setIntroStep(3);
+        return;
+      }
+      // Long 2.5s delay so the globe builds slowly in full view
+      const timer = setTimeout(() => setIntroState('active'), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+  const [introStep, setIntroStep] = useState(-1);
   const [filter, setFilter] = useState('ALL');
   const [showMissionControl, setShowMissionControl] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -50,6 +88,18 @@ export default function Home() {
   const [activeSat, setActiveSat] = useState<SatelliteData | null>(null);
   const [primaryTarget, setPrimaryTarget] = useState<SatelliteData | null>(null);
   const [secondaryTarget, setSecondaryTarget] = useState<SatelliteData | null>(null);
+  const [nebulaActive, setNebulaActive] = useState(false);
+
+  useEffect(() => {
+    if (!activeSat) return;
+
+    if (activeSat.id === 'JWST-1') {
+      setNebulaActive(true);
+    } else {
+      setNebulaActive(false);
+    }
+  }, [activeSat]);
+
   const [activeSatDetails, setActiveSatDetails] = useState({ alt: '0', vel: '0' });
   const [analysisState, setAnalysisState] = useState<'idle' | 'computing' | 'complete'>('idle');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
@@ -105,6 +155,16 @@ export default function Home() {
     const results = [];
     const query = searchQuery.toLowerCase();
 
+    // 🛸 Easter Eggs Manual Injection
+    if ("starman tesla roadster 43205".includes(query)) {
+      results.push({
+        name: "STARMAN (TESLA ROADSTER) 🚗",
+        id: "43205",
+        tle1: "1 43205U 18017A   23001.00000000  .00000000  00000-0  00000-0 0  9991",
+        tle2: "2 43205  51.6400  10.0000 0005000   0.0000   0.0000 15.50000000    02"
+      });
+    }
+
     // Fast linear scan over TLE data
     for (let i = 0; i < tleData.length; i++) {
       if (tleData[i].startsWith('1 ') && i > 0 && i + 1 < tleData.length) {
@@ -142,14 +202,16 @@ export default function Home() {
   useEffect(() => {
     if (activeSat) {
       const simDate = new Date(Date.now() + timeOffsetMinutes * 60000);
-      const pv = satellite.propagate(activeSat.satrec, simDate);
-      if (pv.position && typeof pv.position !== 'boolean' && pv.velocity && typeof pv.velocity !== 'boolean') {
-        const p = pv.position as satellite.EciVec3<number>;
-        const v = pv.velocity as satellite.EciVec3<number>;
-        const alt = (Math.sqrt(p.x**2 + p.y**2 + p.z**2) - 6371).toFixed(1);
-        const vel = Math.sqrt(v.x**2 + v.y**2 + v.z**2).toFixed(2);
-        setActiveSatDetails({ alt, vel });
-      }
+      try {
+        const pv = satellite.propagate(activeSat.satrec, simDate);
+        if (pv.position && typeof pv.position !== 'boolean' && pv.velocity && typeof pv.velocity !== 'boolean') {
+          const p = pv.position as satellite.EciVec3<number>;
+          const v = pv.velocity as satellite.EciVec3<number>;
+          const alt = (Math.sqrt(p.x**2 + p.y**2 + p.z**2) - 6371).toFixed(1);
+          const vel = Math.sqrt(v.x**2 + v.y**2 + v.z**2).toFixed(2);
+          setActiveSatDetails({ alt, vel });
+        }
+      } catch (e) {}
     }
   }, [activeSat, timeOffsetMinutes]);
 
@@ -276,7 +338,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#0a0a0a] text-[#ffffff] font-sans relative overflow-hidden" style={{ fontFamily: 'var(--font-inter, Inter)' }}>
       <CustomCursor />
       {/* Deep Space Ambient Glow */}
-      <div className="ambient-glow absolute w-[500px] h-[200px] rounded-full bg-white/5 blur-[100px] z-0 pointer-events-none top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"></div>
+      <div className={`ambient-glow absolute w-[500px] h-[200px] rounded-full bg-white/5 blur-[100px] z-0 pointer-events-none top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-opacity duration-1000 ${nebulaActive ? 'opacity-0' : 'opacity-100'}`}></div>
 
       {/* 3D Globe Container */}
       <div className="absolute inset-0 z-0 cursor-crosshair">
@@ -377,7 +439,9 @@ export default function Home() {
                   <span className="text-[11px] uppercase tracking-widest font-bold mb-1 text-white">
                     {avoidState === 'computing' ? 'Optimizing...' : avoidState === 'complete' ? 'Maneuver Found' : 'Optimize Avoidance'}
                   </span>
-                  {avoidState === 'idle' && <span className="text-[#a3a3a3] font-mono text-[10px]">Calculate Delta-V Burn</span>}
+                  {avoidState === 'idle' && (
+                    <span className="text-[#a3a3a3] font-mono text-[10px]">Calculate Delta-V Burn</span>
+                  )}
                 </button>
               </div>
 
@@ -474,8 +538,14 @@ export default function Home() {
                     {searchResults.map(res => (
                       <div key={res.id} onClick={() => {
                          try {
-                           const satrec = satellite.twoline2satrec(res.tle1, res.tle2);
-                           const satData = { id: res.id, name: res.name, satrec, category: getCategory(res.name), color: [1,1,1] };
+                           let satData;
+                           if (res.id === '43205') {
+                             const satrec = satellite.twoline2satrec(res.tle1, res.tle2);
+                             satData = { id: res.id, name: res.name, satrec, category: 'STARMAN', color: [1.0, 0.0, 0.0] };
+                           } else {
+                             const satrec = satellite.twoline2satrec(res.tle1, res.tle2);
+                             satData = { id: res.id, name: res.name, satrec, category: getCategory(res.name), color: [1,1,1] };
+                           }
                            setFilter('ALL'); // Prevent camera jumping to invisible satellite
                            setPrimaryTarget(null);
                            setSecondaryTarget(null);
@@ -665,15 +735,15 @@ export default function Home() {
       >
         {activeSat && (
           <>
-            <div className="flex justify-between items-start w-full">
-              <div className="flex flex-col items-start w-full">
-                <div className="flex items-center gap-3 mb-1 w-full">
-                  <h2 style={{ fontFamily: 'var(--font-display, "Space Grotesk")' }} className="text-2xl font-bold tracking-tight text-white uppercase text-left truncate max-w-[240px]">
-                    {activeSat.name}
-                  </h2>
-                  <div className="w-2 h-2 rounded-full bg-white animate-pulse flex-shrink-0"></div>
+                <div className="flex justify-between items-start w-full">
+                  <div className="flex flex-col items-start w-full">
+                    <div className="flex items-center gap-3 mb-1 w-full">
+                      <h2 style={{ fontFamily: 'var(--font-display, "Space Grotesk")' }} className="text-2xl font-bold tracking-tight uppercase text-left truncate max-w-[240px] text-white">
+                        {activeSat.name}
+                      </h2>
+                  <div className="w-2 h-2 rounded-full animate-pulse flex-shrink-0 bg-white"></div>
                 </div>
-                <p className="text-[11px] text-[#a3a3a3] font-mono tracking-widest uppercase">ID: {activeSat.id}</p>
+                <p className="text-[11px] font-mono tracking-widest uppercase text-[#a3a3a3]">ID: {activeSat.id}</p>
               </div>
               <button
                 onClick={() => setActiveSat(null)}
@@ -685,51 +755,68 @@ export default function Home() {
 
             <div className="w-8 h-[1px] bg-white/10"></div>
 
-            <div className="grid grid-cols-3 gap-4 w-full p-4 bg-white/5 border border-white/5 rounded-xl">
+            {activeSat.id === '43205' && (
+               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-2 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2 opacity-20">
+                    <AlertTriangle className="w-12 h-12 text-red-500" />
+                  </div>
+                  <PixelAstronaut />
+                  <h3 className="text-red-400 font-bold text-[10px] tracking-widest uppercase mb-3">Warning: Off-Nominal Trajectory</h3>
+                  <p className="text-red-300 font-mono text-[10px] leading-relaxed">
+                    VEHICLE: TESLA ROADSTER<br/>
+                    PAYLOAD: "STARMAN"<br/>
+                    ORBIT: LOW EARTH ORBIT<br/><br/>
+                    "DON'T PANIC."
+                  </p>
+               </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-4 w-full p-4 border rounded-xl bg-white/5 border-white/5">
               <div className="flex flex-col">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-[#737373] mb-1 font-semibold">Category</p>
-                <p className="text-xs text-white font-medium uppercase tracking-widest">{activeSat.category}</p>
+                <p className="text-[9px] uppercase tracking-[0.2em] mb-1 font-semibold text-[#737373]">Category</p>
+                <p className="text-xs font-medium uppercase tracking-widest text-white">{activeSat.category}</p>
               </div>
               <div className="flex flex-col">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-[#737373] mb-1 font-semibold">Altitude</p>
-                <p className="text-xs text-white font-mono tracking-wider">{activeSatDetails.alt} <span className="text-[8px] text-[#737373]">KM</span></p>
+                <p className="text-[9px] uppercase tracking-[0.2em] mb-1 font-semibold text-[#737373]">Altitude</p>
+                <p className="text-xs font-mono tracking-wider text-white">{activeSatDetails.alt} <span className="text-[8px] text-[#737373]">KM</span></p>
               </div>
               <div className="flex flex-col">
-                <p className="text-[9px] uppercase tracking-[0.2em] text-[#737373] mb-1 font-semibold">Velocity</p>
-                <p className="text-xs text-white font-mono tracking-wider">{activeSatDetails.vel} <span className="text-[8px] text-[#737373]">KM/S</span></p>
+                <p className="text-[9px] uppercase tracking-[0.2em] mb-1 font-semibold text-[#737373]">Velocity</p>
+                <p className="text-xs font-mono tracking-wider text-white">{activeSatDetails.vel} <span className="text-[8px] text-[#737373]">KM/S</span></p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 w-full">
-              <button
-                onClick={() => {
-                  setPrimaryTarget(activeSat);
-                  setShowMissionControl(true);
-                }}
-                disabled={primaryTarget?.id === activeSat.id}
-                className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
-                  primaryTarget?.id === activeSat.id
-                    ? 'bg-white/10 border-[#00ff88] text-white shadow-[0_0_15px_rgba(0,255,136,0.2)] cursor-default'
-                    : 'bg-transparent border-white/20 text-white hover:bg-white/10'
-                }`}
-              >
-                {primaryTarget?.id === activeSat.id ? 'Primary Set' : 'Set Primary'}
-              </button>
-              <button
-                onClick={() => {
-                  setSecondaryTarget(activeSat);
-                  setShowMissionControl(true);
-                }}
-                disabled={secondaryTarget?.id === activeSat.id}
-                className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
-                  secondaryTarget?.id === activeSat.id
-                    ? 'bg-white/10 border-[#00ffff] text-white shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-default'
-                    : 'bg-transparent border-white/20 text-white hover:bg-white/10'
-                }`}
-              >
-                {secondaryTarget?.id === activeSat.id ? 'Secondary Set' : 'Set Secondary'}
-              </button>
-            </div>
+                <button
+                  onClick={() => {
+                    setPrimaryTarget(activeSat);
+                    setShowMissionControl(true);
+                  }}
+                  disabled={primaryTarget?.id === activeSat.id}
+                  className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
+                    primaryTarget?.id === activeSat.id
+                      ? 'bg-white/10 border-[#00ff88] text-white shadow-[0_0_15px_rgba(0,255,136,0.2)] cursor-default'
+                      : 'bg-transparent border-white/20 text-white hover:bg-white/10'
+                  }`}
+                >
+                  {primaryTarget?.id === activeSat.id ? 'Primary Set' : 'Set Primary'}
+                </button>
+                <button
+                  onClick={() => {
+                    setSecondaryTarget(activeSat);
+                    setShowMissionControl(true);
+                  }}
+                  disabled={secondaryTarget?.id === activeSat.id}
+                  className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
+                    secondaryTarget?.id === activeSat.id
+                      ? 'bg-white/10 border-[#00ffff] text-white shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-default'
+                      : 'bg-transparent border-white/20 text-white hover:bg-white/10'
+                  }`}
+                >
+                  {secondaryTarget?.id === activeSat.id ? 'Secondary Set' : 'Set Secondary'}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
@@ -775,12 +862,155 @@ export default function Home() {
          />
       </div>
 
-      {/* Loading Screen */}
-      {loading && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-50" style={{ background: 'var(--bg-primary, #0a0a0a)' }}>
-          <GlobeIcon className="w-8 h-8 text-white animate-pulse mb-6" />
-          <h2 style={{ fontFamily: 'var(--font-display, "Space Grotesk")' }} className="text-xl font-bold tracking-[0.2em] uppercase text-white mb-2">Initializing</h2>
-          <p className="text-[#a3a3a3] font-mono text-[10px] uppercase tracking-widest">Establishing Orbital Link...</p>
+      {/* Cinematic Intro Screen - Onboarding */}
+      {introState !== 'hidden' && (
+        <div
+          className={`absolute inset-0 z-[60] flex flex-col items-center justify-center transition-opacity duration-300 ${introState === 'active' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          style={{
+            background: 'rgba(0, 0, 0, 0.4)',
+            backdropFilter: 'blur(24px)',
+            WebkitBackdropFilter: 'blur(24px)'
+          }}
+        >
+          {/* Large Onboarding Modal */}
+          <div
+            className={`flex p-8 rounded-3xl w-[850px] h-[500px] relative transition-all duration-300 ease-out ${introState === 'active' ? 'scale-100 translate-y-0' : 'scale-95 translate-y-12'}`}
+            style={{
+              background: 'rgba(10, 10, 10, 0.75)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              boxShadow: '0 32px 64px -16px rgba(0,0,0,0.8), inset 0 0 32px rgba(255,255,255,0.02)'
+            }}
+          >
+            {/* Close / Skip Button */}
+            <button
+              onClick={() => {
+                if (typeof window !== 'undefined') localStorage.setItem('oure_intro_skipped', 'true');
+                setIntroState('fading');
+                setTimeout(() => setIntroState('hidden'), 1000);
+              }}
+              className="absolute top-6 right-6 z-[70] text-[#a3a3a3] hover:text-white bg-black/40 hover:bg-white/10 p-2 rounded-full transition-all cursor-pointer border border-white/5"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            {introStep === -1 ? (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center animate-in fade-in duration-700">
+                <GlobeIcon className="w-12 h-12 text-white mb-6 animate-pulse" />
+                <h2 className="text-white text-[10px] font-bold uppercase tracking-[0.3em] mb-4">System Online</h2>
+                <h3 className="text-white text-4xl font-bold tracking-widest mb-6" style={{ fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }}>
+                  WELCOME TO OURE
+                </h3>
+                <p className="text-[#a3a3a3] font-mono text-xs leading-relaxed max-w-md mx-auto mb-12">
+                  Orbital Understanding & Reconnaissance Engine.
+                  <br /><br />
+                  Your command center for Earth's orbit. Track active satellites, monitor space debris, and predict collisions in real time.
+                </p>
+                <button
+                  onClick={() => setIntroStep(0)}
+                  className="bg-white text-black font-bold text-[10px] px-12 py-4 rounded-xl uppercase tracking-[0.2em] transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:bg-gray-200 flex items-center justify-center gap-3 cursor-pointer hover:scale-105"
+                >
+                  Begin
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Left Column: Text & Controls */}
+                <div className="w-1/2 pr-10 flex flex-col justify-between animate-in fade-in slide-in-from-left-4 duration-500">
+                  <div>
+                    <div className="flex items-center gap-4 mb-10">
+                      <GlobeIcon className="w-6 h-6 text-white" />
+                      <h1 className="text-2xl font-bold tracking-[0.1em] uppercase text-white" style={{ fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }}>
+                        OURE<span className="text-[#a3a3a3]">.</span>
+                      </h1>
+                    </div>
+
+                    {introStep === 0 && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <h2 className="text-white text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Step 1: Global Coverage</h2>
+                        <h3 className="text-white text-3xl font-bold tracking-wider mb-5">Real-Time Tracking</h3>
+                        <p className="text-[#a3a3a3] font-mono text-[11px] leading-relaxed mb-6">
+                          Explore the 3D globe to track thousands of satellites and space debris as they orbit the Earth right now.
+                        </p>
+                      </div>
+                    )}
+
+                    {introStep === 1 && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <h2 className="text-white text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Step 2: Live Data</h2>
+                        <h3 className="text-white text-3xl font-bold tracking-wider mb-5">Mission Control</h3>
+                        <p className="text-[#a3a3a3] font-mono text-[11px] leading-relaxed mb-6">
+                          Click on any satellite to open Mission Control. Here you can see its live speed, altitude, and detailed flight path.
+                        </p>
+                      </div>
+                    )}
+
+                    {introStep === 2 && (
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <h2 className="text-white text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Step 3: Collision Avoidance</h2>
+                        <h3 className="text-white text-3xl font-bold tracking-wider mb-5">Risk Warnings</h3>
+                        <p className="text-[#a3a3a3] font-mono text-[11px] leading-relaxed mb-6">
+                          Spot potential crashes before they happen. The system automatically scans for nearby objects and warns you if they get too close.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Progress Indicators */}
+                    <div className="flex gap-2 mt-4">
+                       {[0,1,2].map((step) => (
+                         <div key={step} className={`h-1 rounded-full transition-all duration-500 ${introStep === step ? 'w-8 bg-white' : 'w-2 bg-white/20'}`} />
+                       ))}
+                    </div>
+                  </div>
+
+                  {/* Bottom Controls */}
+                  <div className="flex justify-between items-center mt-8">
+                    {introStep < 2 ? (
+                      <button
+                        onClick={() => setIntroStep(introStep + 1)}
+                        className="w-full bg-transparent border border-white/20 text-white font-bold text-[10px] py-4 rounded-xl uppercase tracking-[0.15em] transition-all duration-300 hover:bg-white/10 flex items-center justify-center gap-3 cursor-pointer"
+                      >
+                        Next Step
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('oure_intro_skipped', 'true');
+                          }
+                          setIntroState('fading');
+                          setTimeout(() => setIntroState('hidden'), 1000);
+                        }}
+                        className="w-full bg-white text-black font-bold text-[10px] py-4 rounded-xl uppercase tracking-[0.15em] transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:bg-gray-200 flex items-center justify-center gap-3 cursor-pointer"
+                      >
+                        <Target className="w-4 h-4" />
+                        Initialize System
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Column: User Screenshots */}
+                <div className="w-1/2 h-full rounded-2xl overflow-hidden relative bg-transparent group animate-in fade-in slide-in-from-right-4 duration-500">
+                   {/* Scanline Overlay */}
+                   <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4yIi8+PC9zdmc+')] z-20 pointer-events-none opacity-40 mix-blend-overlay"></div>
+
+                   {/* Images */}
+                   <div className={`absolute inset-0 w-full h-full flex items-center justify-center p-2 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 ${introStep === 0 ? 'opacity-90 scale-100 blur-0 pointer-events-auto' : 'opacity-0 scale-110 blur-md pointer-events-none'}`}>
+                     <img src="/images/Screenshot_1.png" alt="Globe Tracking" className="w-full h-auto max-h-full rounded-2xl object-contain shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-white/5" />
+                   </div>
+
+                   <div className={`absolute inset-0 w-full h-full flex items-center justify-center p-2 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 ${introStep === 1 ? 'opacity-100 scale-100 blur-0 pointer-events-auto' : 'opacity-0 scale-95 blur-md pointer-events-none'}`}>
+                     <img src="/images/Screenshot_2.png" alt="Mission Control" className="w-full h-auto max-h-full rounded-2xl object-contain shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-white/5" />
+                   </div>
+
+                   <div className={`absolute inset-0 w-full h-full flex items-center justify-center p-2 transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] z-10 ${introStep === 2 ? 'opacity-100 scale-100 blur-0 pointer-events-auto' : 'opacity-0 scale-95 blur-md pointer-events-none'}`}>
+                     <img src="/images/Screenshot_3.png?v=2" alt="Collision Risk" className="w-full h-auto max-h-full rounded-2xl object-contain shadow-[0_0_40px_rgba(0,0,0,0.5)] border border-white/5" />
+                   </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

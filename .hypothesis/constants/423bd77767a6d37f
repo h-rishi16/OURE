@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/api/tasks.py
+# hypothesis_version: 6.153.2
+
+[5.0, 20.0, 72.0, ',', '25544', 'ACTION', 'MONITOR', 'PROGRESS', 'SPACETRACK_PASS', 'SPACETRACK_USER', 'completed', 'error', 'events_found', 'failed', 'miss_distance_km', 'oure.tasks', 'pc', 'primary_id', 'results', 'secondary_id', 'status', 'tca', 'warning_level']

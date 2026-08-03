@@ -1,0 +1,4 @@
+# file: /app/data/state_manager.py
+# hypothesis_version: 6.153.2
+
+['epoch', 'id', 'state']

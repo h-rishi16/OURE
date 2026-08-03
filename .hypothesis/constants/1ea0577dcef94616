@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/monitoring/alerting.py
+# hypothesis_version: 6.153.2
+
+[200, 201, 204, 'ACTION', 'Content-Type', 'MONITOR', 'OURE ALERT: NOMINAL', 'POST', 'Z', 'application/json', 'asset', 'miss_distance_km', 'oure.alerting', 'payload', 'pc', 'tca', 'text', 'utf-8']

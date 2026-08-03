@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Stars, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
@@ -25,7 +25,8 @@ function PhysicsManager({ autoRotate, setAutoRotate }: { autoRotate: boolean, se
 
     // When zoomed in closer than 18,000, drop to 1x real-time (effectively frozen)
     // and stop the camera panning so it's easy to click satellites.
-    if (distance < 18000) {
+    // Exception: Do not freeze during the initial 3-second cinematic boot sequence.
+    if (distance < 18000 && state.clock.elapsedTime > 3) {
       currentScale = 1;
       shouldAutoRotate = false;
     }
@@ -155,23 +156,34 @@ function Satellites({
         try {
           const satrec = satellite.twoline2satrec(tle1, tle2);
           if (satrec.error === 0) {
-            // Portfolio theme: Monochrome, Silver, Black, White
-            let r = 0.25, g = 0.25, b = 0.25; // Default OTHER (Dark Gray)
-            if (category === "STATION") { r = 1.0; g = 1.0; b = 1.0; }    // Pure White
-            if (category === "STARLINK") { r = 0.85; g = 0.85; b = 0.85; } // Bright Silver
-            if (category === "COMM") { r = 0.7; g = 0.7; b = 0.7; }       // Light Gray
-            if (category === "NAV") { r = 0.6; g = 0.6; b = 0.6; }        // Medium-Light
-            if (category === "SCIENCE") { r = 0.5; g = 0.5; b = 0.5; }    // Medium Gray
-            if (category === "MILITARY") { r = 0.4; g = 0.4; b = 0.4; }   // Medium-Dark
-            if (category === "DEBRIS") { r = 0.15; g = 0.15; b = 0.15; }  // Very Dark
+            let r = 0.25, g = 0.25, b = 0.25;
+            if (category === "STATION") { r = 1.0; g = 1.0; b = 1.0; }
+            if (category === "STARLINK") { r = 0.85; g = 0.85; b = 0.85; }
+            if (category === "COMM") { r = 0.7; g = 0.7; b = 0.7; }
+            if (category === "NAV") { r = 0.6; g = 0.6; b = 0.6; }
+            if (category === "SCIENCE") { r = 0.5; g = 0.5; b = 0.5; }
+            if (category === "MILITARY") { r = 0.4; g = 0.4; b = 0.4; }
+            if (category === "DEBRIS") { r = 0.15; g = 0.15; b = 0.15; }
 
             sats.push({ name, id: noradId, category, satrec, color: [r, g, b] });
           }
         } catch {
-          // ignore
         }
       }
     }
+
+    const starmanSatrec = satellite.twoline2satrec(
+      "1 43205U 18017A   23001.00000000  .00000000  00000-0  00000-0 0  9991",
+      "2 43205  51.6400  10.0000 0005000   0.0000   0.0000 15.50000000    02"
+    );
+    sats.push({
+      name: "STARMAN (TESLA ROADSTER) 🚗",
+      id: "43205",
+      category: "STARMAN",
+      satrec: starmanSatrec,
+      color: [1.0, 0.0, 0.0]
+    });
+
     return sats;
   }, [tleData]);
 
@@ -188,9 +200,16 @@ function Satellites({
 
   const isZooming = useRef(false);
   const zoomTimeout = useRef<any>(null);
-  const isZoomingOut = useRef(false);
+  const isZoomingOut = useRef(true);
   const zoomOutTimeout = useRef<any>(null);
   const prevFocusRef = useRef<string | null | undefined>(null);
+
+  React.useEffect(() => {
+    const bootTimer = setTimeout(() => {
+      isZoomingOut.current = false;
+    }, 2500);
+    return () => clearTimeout(bootTimer);
+  }, []);
 
   React.useEffect(() => {
     isZooming.current = !!focusSatId;
@@ -214,7 +233,6 @@ function Satellites({
     const colorAttr = meshRef.current.geometry.attributes.color;
     const colArray = colorAttr.array as Float32Array;
 
-    // Reset all to original colors
     satellites.forEach((sat, i) => {
       colArray[i * 3] = sat.color[0];
       colArray[i * 3 + 1] = sat.color[1];
@@ -224,7 +242,6 @@ function Satellites({
     if (focusSatId) {
       const idx = satellites.findIndex(s => s.id === focusSatId);
       if (idx !== -1) {
-        // Neon Cyan Highlight for primary selection (avoids false-alarm red when just browsing)
         colArray[idx * 3] = 0.0;
         colArray[idx * 3 + 1] = 1.0;
         colArray[idx * 3 + 2] = 1.0;
@@ -234,7 +251,6 @@ function Satellites({
     if (secondarySatId) {
       const idx2 = satellites.findIndex(s => s.id === secondarySatId);
       if (idx2 !== -1) {
-        // Neon Orange/Yellow Highlight for secondary
         colArray[idx2 * 3] = 1.0;
         colArray[idx2 * 3 + 1] = 0.7;
         colArray[idx2 * 3 + 2] = 0.0;
@@ -244,29 +260,6 @@ function Satellites({
     colorAttr.needsUpdate = true;
   }, [focusSatId, secondarySatId, satellites]);
 
-  const glowTexture = useMemo(() => {
-    if (typeof document === 'undefined') return null;
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return null;
-
-    const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-    gradient.addColorStop(0.4, 'rgba(255, 255, 255, 1)'); // Solid bright core
-    gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.8)'); // Strong glow
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 64, 64);
-
-    return new THREE.CanvasTexture(canvas);
-  }, []);
-
-  // INCREASED CHUNK SIZE FOR PERFORMANCE OPTIMIZATION
-  // Instead of updating 2,000 satellites per frame (120k ops/sec),
-  // we update ~300 per frame (18k ops/sec). Reduces Mac overheating by 80%.
   const UPDATE_CHUNKS = 30;
   const chunkRef = useRef(0);
 
@@ -292,14 +285,12 @@ function Satellites({
         continue;
       }
 
+
       const pv = satellite.propagate(sat.satrec, simDate);
       if (pv.position && typeof pv.position !== 'boolean') {
         const p = pv.position as satellite.EciVec3<number>;
-
-        // The GEO belt is at ~42,164 km.
-        // We clip anything beyond 43,000 km so there are no stray satellites beyond the equator belt.
         const distSq = p.x * p.x + p.y * p.y + p.z * p.z;
-        if (distSq > 43000 * 43000) {
+        if (distSq > 43000 * 43000 && sat.id !== '43205') {
           posArray[i * 3] = 9999999;
           posArray[i * 3 + 1] = 9999999;
           posArray[i * 3 + 2] = 9999999;
@@ -321,18 +312,27 @@ function Satellites({
 
     if (focusSatId && controlsRef?.current) {
       const targetSat = satellites.find(s => s.id === focusSatId);
-      if (targetSat) {
-        const pv = satellite.propagate(targetSat.satrec, simDate);
-        if (pv.position && typeof pv.position !== 'boolean') {
-          const p = pv.position as satellite.EciVec3<number>;
-          const targetVec = new THREE.Vector3(p.x, p.z, -p.y);
+      if (targetSat || focusSatId === 'JWST-1') {
+        let targetVec = new THREE.Vector3();
+        let valid = false;
 
+        if (focusSatId === 'JWST-1') {
+          targetVec.set(150000, 0, 0);
+          valid = true;
+
+        } else if (targetSat) {
+          const pv = satellite.propagate(targetSat.satrec, simDate);
+          if (pv.position && typeof pv.position !== 'boolean') {
+            const p = pv.position as satellite.EciVec3<number>;
+            targetVec.set(p.x, p.z, -p.y);
+            valid = true;
+          }
+        }
+
+        if (valid) {
           controlsRef.current.target.lerp(targetVec, 0.08);
 
           if (isZooming.current) {
-            // Place the camera 50% further out from the Earth's center than the satellite itself.
-            // Derive this destination from the ALREADY-SMOOTHED target vector, not the raw telemetry,
-            // to completely eliminate high-frequency micro-stuttering!
             const desiredPos = controlsRef.current.target.clone().multiplyScalar(1.5);
             state.camera.position.lerp(desiredPos, 0.03);
             if (state.camera.position.distanceTo(desiredPos) < 2000) {
@@ -344,7 +344,6 @@ function Satellites({
         }
       }
 
-      // Render Covariance Ellipsoid for Secondary Target
       if (secondarySatId && ellipsoidRef.current) {
         const secSat = satellites.find(s => s.id === secondarySatId);
         if (secSat) {
@@ -354,7 +353,6 @@ function Satellites({
             const v = pv.velocity as satellite.EciVec3<number>;
             ellipsoidRef.current.position.set(p.x, p.z, -p.y);
 
-            // Orient the ellipsoid along the velocity vector
             const velVec = new THREE.Vector3(v.x, v.z, -v.y).normalize();
             const up = new THREE.Vector3(0, 1, 0);
             const quaternion = new THREE.Quaternion().setFromUnitVectors(up, velVec);
@@ -372,7 +370,6 @@ function Satellites({
       }
 
     } else if (!focusSatId && controlsRef?.current) {
-      // Smoothly return target to the center of the Earth when deselecting
       const defaultTarget = new THREE.Vector3(0, 0, 0);
       if (controlsRef.current.target && typeof controlsRef.current.target.distanceToSquared === 'function') {
         if (controlsRef.current.target.distanceToSquared(defaultTarget) > 10000) {
@@ -380,21 +377,18 @@ function Satellites({
         }
       }
 
-      // Hide the ellipsoid if there is no primary target selected
       if (ellipsoidRef.current) {
         ellipsoidRef.current.visible = false;
       }
 
-      // Perform a graceful, one-shot cinematic pull-back when deselecting
       if (isZoomingOut.current) {
         const homePos = new THREE.Vector3(0, 5000, 25000);
-        state.camera.position.lerp(homePos, 0.03);
-        if (state.camera.position.distanceTo(homePos) < 2000) {
+        state.camera.position.lerp(homePos, 0.015);
+        if (state.camera.position.distanceTo(homePos) < 500) {
           isZoomingOut.current = false;
         }
       }
 
-      // Gentle spherical boundary so you never clip through the Earth manually
       if (state.camera.position.length() < 6400) {
          state.camera.position.setLength(6400);
       }
@@ -416,7 +410,7 @@ function Satellites({
   return (
     <>
     <points ref={meshRef} onPointerDown={handlePointerDown}>
-      <bufferGeometry>
+      <bufferGeometry key={satellites.length}>
         <bufferAttribute
           attach="attributes-position"
           count={positions.length / 3}
@@ -441,7 +435,6 @@ function Satellites({
       />
     </points>
     <group ref={ellipsoidRef} visible={false}>
-      {/* Inner Core */}
       <mesh scale={
         warningLevel === 'RED' ? [0.5, 3.0, 0.5] : [0.3, 1.5, 0.3]
       }>
@@ -452,7 +445,6 @@ function Satellites({
         />
       </mesh>
 
-      {/* Outer Wireframe Math Model */}
       <mesh scale={
         warningLevel === 'RED' ? [0.52, 3.1, 0.52] : [0.32, 1.55, 0.32]
       }>
@@ -482,15 +474,15 @@ function Satellites({
 function Trajectory({ focusSatId, satellites, color = "#ff0a2a", timeOffsetMinutes }: { focusSatId?: string | null, satellites: SatelliteData[], color?: string, timeOffsetMinutes: number }) {
   const points = useMemo(() => {
     if (!focusSatId) return [];
+    if (focusSatId === 'JWST-1') return [];
     const sat = satellites.find(s => s.id === focusSatId);
     if (!sat) return [];
 
     const pts: THREE.Vector3[] = [];
     const baseTime = initialTime + simElapsedTime + manualTimeOffset;
 
-    // Calculate orbital flight path for the next 100 minutes (approx 1 full LEO orbit)
     for (let i = 0; i <= 100; i++) {
-      const t = new Date(baseTime + i * 60000); // 1 minute steps
+      const t = new Date(baseTime + i * 60000);
       const pv = satellite.propagate(sat.satrec, t);
       if (pv.position && typeof pv.position !== 'boolean') {
         const p = pv.position as satellite.EciVec3<number>;
@@ -518,9 +510,6 @@ function Trajectory({ focusSatId, satellites, color = "#ff0a2a", timeOffsetMinut
 function DynamicRaycaster() {
   const { camera, raycaster } = useThree();
   useFrame(() => {
-    // Dynamically scale the raycaster threshold based on camera distance!
-    // At LEO (10,000 units away), threshold is ~25 (super precise).
-    // At GEO (100,000 units away), threshold is ~250 (large enough to click from far).
     const dist = camera.position.length();
     const dynamicThreshold = Math.max(15, dist * 0.0025);
     (raycaster as any).params.Points.threshold = dynamicThreshold;
@@ -536,7 +525,8 @@ export default function Globe({
   secondarySatId,
   timeOffsetMinutes = 0,
   escapeTrajectory,
-  warningLevel
+  warningLevel,
+  isInfrared = false
 }: {
   tleData: string[],
   filter: string,
@@ -554,7 +544,7 @@ export default function Globe({
   return (
     <div className="w-full h-full relative cursor-crosshair">
       <Canvas
-        camera={{ position: [0, 5000, 25000], fov: 45, near: 1, far: 400000 }}
+        camera={{ position: [0, 500, 7500], fov: 45, near: 1, far: 400000 }}
         gl={{ antialias: true, alpha: true, logarithmicDepthBuffer: true }}
       >
         <DynamicRaycaster />
@@ -578,6 +568,18 @@ export default function Globe({
           escapeTrajectory={escapeTrajectory}
           warningLevel={warningLevel}
         />
+
+        {focusSatId === 'JWST-1' && (
+          <group position={[150000, 0, 0]}>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[200, 200, 20, 6]} />
+              <meshStandardMaterial color="#ffcc00" metalness={0.8} roughness={0.2} />
+            </mesh>
+            <pointLight distance={10000} intensity={2} color="#ffcc00" />
+          </group>
+        )}
+
+
 
         <OrbitControls
           ref={controlsRef}

@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/cli/cmd_history.py
+# hypothesis_version: 6.153.2
+
+[1e-05, 0.001, '--output', '--primary', '--secondary', '-o', '-p', '-s', 'GREEN', 'Level', 'Miss (km)', 'Pc', 'RED', 'RED Alert (1e-3)', 'Risk History Engine', 'T', 'TCA (UTC)', 'YELLOW', 'YELLOW Alert (1e-5)', 'center', 'circle', 'danger', 'dash', 'dict[str, Any]', 'evaluation_time', 'highlight', 'info', 'lightgrey', 'lines+markers', 'log', 'orange', 'pc', 'red', 'right', 'risk_history.html', 'success', 'tca', 'warning', 'warning_level', 'white', 'x unified']

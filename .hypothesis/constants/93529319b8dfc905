@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/core/logging_config.py
+# hypothesis_version: 6.153.2
+
+['%(message)s', 'INFO', 'console', 'iso', 'json']

@@ -1,0 +1,4 @@
+# file: /Users/hrishi/Projects/oure/oure/risk/optimizer.py
+# hypothesis_version: 6.153.2
+
+[0.0, 1e-12, 1e-08, 1e-05, 0.05, 1.0, 9.80665, 60.0, 100.0, 220.0, 360.0, 1000.0, 1000000.0, 'SLSQP', 'disp', 'ftol', 'fun', 'ineq', 'inf', 'maxiter', 'oure.risk.optimizer', 'type']
