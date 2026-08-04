@@ -62,6 +62,7 @@ const CustomCursor = () => {
     <>
       {/* Outer glow ring */}
       <motion.div
+        className="hidden md:block"
         animate={{
           scale: (eggState === 'suck' || eggState === 'supernova_charge') ? 0.8 : (isHovering ? 1.5 : 1),
           opacity: (eggState === 'suck' || eggState === 'supernova_charge') ? 0 : 1,
@@ -87,6 +88,7 @@ const CustomCursor = () => {
 
       {/* Core dot */}
       <motion.div
+        className="hidden md:block"
         animate={{
           width: (eggState === 'supernova_explode' || eggState === 'supernova_charge') ? 100 : (eggState === 'suck' ? 48 : (isHovering ? 10 : 4)),
           height: (eggState === 'supernova_explode' || eggState === 'supernova_charge') ? 100 : (eggState === 'suck' ? 48 : (isHovering ? 10 : 4)),

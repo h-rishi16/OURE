@@ -362,7 +362,7 @@ export default function Home() {
           WebkitBackdropFilter: 'blur(24px)'
         }}
       >
-        <div className={`relative flex flex-col items-center justify-center p-12 rounded-[2.5rem] min-w-[550px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${analysisState !== 'idle' ? 'scale-100 translate-y-0' : 'scale-90 translate-y-12'}`}
+        <div className={`relative flex flex-col items-center justify-center p-6 md:p-12 rounded-[2.5rem] w-11/12 max-w-[550px] md:min-w-[550px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${analysisState !== 'idle' ? 'scale-100 translate-y-0' : 'scale-90 translate-y-12'}`}
              style={{
                background: 'rgba(10, 10, 10, 0.85)',
                border: '1px solid rgba(255,255,255,0.08)',
@@ -469,7 +469,7 @@ export default function Home() {
 
       {/* Top Left Header (Button + Logo) */}
       <div
-        className="absolute top-8 left-8 z-50 flex items-center gap-4 px-4 py-3 rounded-2xl"
+        className="absolute top-4 left-4 md:top-8 md:left-8 z-50 flex items-center gap-4 px-4 py-3 rounded-2xl"
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -493,7 +493,7 @@ export default function Home() {
 
       {/* Retractable Sidebar */}
       <div
-        className={`absolute top-28 left-8 z-40 flex flex-col gap-4 p-4 rounded-2xl min-w-[300px] transition-all duration-500 origin-top-left ${isSidebarOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
+        className={`absolute top-20 md:top-28 left-4 right-4 md:right-auto md:left-8 z-40 flex flex-col gap-4 p-4 rounded-2xl md:min-w-[300px] transition-all duration-500 origin-top-left ${isSidebarOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -653,9 +653,8 @@ export default function Home() {
         </nav>
       </div>
 
-      {/* Top Right Mission Control Toggle */}
       <button
-        className="absolute top-8 right-8 z-50 flex items-center gap-4 px-4 py-3 rounded-2xl cursor-pointer group"
+        className="absolute top-4 right-4 md:top-8 md:right-8 z-50 flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-2xl cursor-pointer group"
         onClick={() => setShowMissionControl(!showMissionControl)}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
@@ -667,15 +666,16 @@ export default function Home() {
           boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.2)'
         }}
       >
-        <span className="text-[#a3a3a3] group-hover:text-white transition-colors text-[11px] font-bold uppercase tracking-[0.15em] pl-2">
+        <Target className="w-4 h-4 text-[#a3a3a3] group-hover:text-white transition-colors block md:hidden" />
+        <span className="text-[#a3a3a3] group-hover:text-white transition-colors text-[11px] font-bold uppercase tracking-[0.15em] pl-0 md:pl-2 hidden md:inline">
           Mission Control
         </span>
-        <div className="w-2 h-2 rounded-full bg-white animate-pulse mr-2 shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
+        <div className="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
       </button>
 
       {/* Minimalist Mission Control (Right) */}
       <div
-        className={`absolute top-28 right-8 w-80 z-40 space-y-4 flex flex-col gap-4 p-5 rounded-3xl transition-all duration-500 origin-top-right ${showMissionControl ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
+        className={`absolute top-20 md:top-28 right-4 left-4 md:left-auto md:right-8 w-auto md:w-80 z-40 space-y-4 flex flex-col gap-4 p-5 rounded-3xl transition-all duration-500 origin-top-right ${showMissionControl ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -722,7 +722,7 @@ export default function Home() {
 
       {/* Sleek Satellite Info HUD (Bottom Right) */}
       <div
-        className={`fixed bottom-8 right-8 z-40 flex flex-col gap-4 p-5 rounded-3xl min-w-[320px] transition-all duration-700 ease-in-out ${activeSat ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
+        className={`fixed bottom-4 md:bottom-8 right-4 left-4 md:left-auto md:right-8 z-40 flex flex-col gap-4 p-5 rounded-3xl min-w-0 md:min-w-[320px] transition-all duration-700 ease-in-out ${activeSat ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -771,7 +771,7 @@ export default function Home() {
                </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4 w-full p-4 border rounded-xl bg-white/5 border-white/5">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 w-full p-4 border rounded-xl bg-white/5 border-white/5">
               <div className="flex flex-col">
                 <p className="text-[9px] uppercase tracking-[0.2em] mb-1 font-semibold text-[#737373]">Category</p>
                 <p className="text-xs font-medium uppercase tracking-widest text-white">{activeSat.category}</p>
@@ -786,7 +786,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 w-full">
+            <div className="flex items-center gap-2 md:gap-3 w-full">
                 <button
                   onClick={() => {
                     setPrimaryTarget(activeSat);
@@ -823,7 +823,7 @@ export default function Home() {
 
       {/* Time Scrubber */}
       <div
-        className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 z-40 w-[450px] max-w-[90vw] flex flex-col gap-3 p-5 rounded-3xl transition-all duration-500 ${isTimeScrubberOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
+        className={`absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-40 w-[95vw] md:w-[450px] flex flex-col gap-3 p-5 rounded-3xl transition-all duration-500 ${isTimeScrubberOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -874,7 +874,7 @@ export default function Home() {
         >
           {/* Large Onboarding Modal */}
           <div
-            className={`flex p-8 rounded-3xl w-[850px] h-[500px] relative transition-all duration-300 ease-out ${introState === 'active' ? 'scale-100 translate-y-0' : 'scale-95 translate-y-12'}`}
+            className={`flex p-6 md:p-8 rounded-3xl w-11/12 md:w-[850px] h-auto md:h-[500px] max-h-[90vh] overflow-y-auto relative transition-all duration-300 ease-out ${introState === 'active' ? 'scale-100 translate-y-0' : 'scale-95 translate-y-12'}`}
             style={{
               background: 'rgba(10, 10, 10, 0.75)',
               border: '1px solid rgba(255,255,255,0.08)',
@@ -915,7 +915,7 @@ export default function Home() {
             ) : (
               <>
                 {/* Left Column: Text & Controls */}
-                <div className="w-1/2 pr-10 flex flex-col justify-between animate-in fade-in slide-in-from-left-4 duration-500">
+                <div className="w-full md:w-1/2 md:pr-10 flex flex-col justify-between animate-in fade-in slide-in-from-left-4 duration-500">
                   <div>
                     <div className="flex items-center gap-4 mb-10">
                       <GlobeIcon className="w-6 h-6 text-white" />
@@ -991,7 +991,7 @@ export default function Home() {
                 </div>
 
                 {/* Right Column: User Screenshots */}
-                <div className="w-1/2 h-full rounded-2xl overflow-hidden relative bg-transparent group animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="hidden md:flex w-1/2 h-full rounded-2xl overflow-hidden relative bg-transparent group animate-in fade-in slide-in-from-right-4 duration-500">
                    {/* Scanline Overlay */}
                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4yIi8+PC9zdmc+')] z-20 pointer-events-none opacity-40 mix-blend-overlay"></div>
 
