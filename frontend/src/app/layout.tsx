@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,11 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "OURE SSA Platform",
   description: "Orbital Uncertainty & Risk Engine",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({

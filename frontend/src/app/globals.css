@@ -6,6 +6,7 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: dark;
   --background: #0a0a0a;
   --foreground: #ffffff;
   --font-main: 'Inter', system-ui, sans-serif;
