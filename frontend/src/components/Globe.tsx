@@ -397,7 +397,7 @@ function Satellites({
     }
   });
 
-  const handlePointerDown = (e: import('@react-three/fiber').ThreeEvent<PointerEvent>) => {
+  const handleClick = (e: import('@react-three/fiber').ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
     if (e.index !== undefined) {
       const sat = satellites[e.index];
@@ -409,7 +409,7 @@ function Satellites({
 
   return (
     <>
-    <points ref={meshRef} onPointerDown={handlePointerDown}>
+    <points ref={meshRef} onClick={handleClick}>
       <bufferGeometry key={satellites.length}>
         <bufferAttribute
           attach="attributes-position"
