@@ -397,8 +397,28 @@ function Satellites({
     }
   });
 
-  const handleClick = (e: import('@react-three/fiber').ThreeEvent<MouseEvent>) => {
+  const downState = useRef({ time: 0, x: 0, y: 0, cam: new THREE.Vector3() });
+
+  const handlePointerDown = (e: import('@react-three/fiber').ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
+    downState.current = {
+      time: performance.now(),
+      x: e.clientX,
+      y: e.clientY,
+      cam: e.camera.position.clone()
+    };
+  };
+
+  const handlePointerUp = (e: import('@react-three/fiber').ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    const timeDelta = performance.now() - downState.current.time;
+    const dist = Math.hypot(e.clientX - downState.current.x, e.clientY - downState.current.y);
+    const camMoved = e.camera.position.distanceTo(downState.current.cam);
+
+    if (timeDelta > 350 || dist > 10 || camMoved > 0.5) {
+      return;
+    }
+
     if (e.index !== undefined) {
       const sat = satellites[e.index];
       if (filter === 'ALL' || sat.category === filter) {
@@ -409,7 +429,7 @@ function Satellites({
 
   return (
     <>
-    <points ref={meshRef} onClick={handleClick}>
+    <points ref={meshRef} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
       <bufferGeometry key={satellites.length}>
         <bufferAttribute
           attach="attributes-position"
