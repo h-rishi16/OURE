@@ -654,7 +654,7 @@ export default function Home() {
       </div>
 
       <button
-        className="absolute top-4 right-4 md:top-8 md:right-8 z-50 flex items-center gap-2 md:gap-4 px-3 md:px-4 py-2 md:py-3 rounded-2xl cursor-pointer group"
+        className="absolute top-4 right-4 md:top-8 md:right-8 z-50 flex items-center gap-2 lg:gap-4 px-3 lg:px-4 py-2 lg:py-3 rounded-2xl cursor-pointer group"
         onClick={() => setShowMissionControl(!showMissionControl)}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
@@ -666,8 +666,8 @@ export default function Home() {
           boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.2)'
         }}
       >
-        <Target className="w-4 h-4 text-[#a3a3a3] group-hover:text-white transition-colors block md:hidden" />
-        <span className="text-[#a3a3a3] group-hover:text-white transition-colors text-[11px] font-bold uppercase tracking-[0.15em] pl-0 md:pl-2 hidden md:inline">
+        <Target className="w-4 h-4 text-[#a3a3a3] group-hover:text-white transition-colors block lg:hidden" />
+        <span className="text-[#a3a3a3] group-hover:text-white transition-colors text-[11px] font-bold uppercase tracking-[0.15em] pl-0 lg:pl-2 hidden lg:inline">
           Mission Control
         </span>
         <div className="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_8px_rgba(255,255,255,0.8)]"></div>
@@ -816,7 +816,6 @@ export default function Home() {
                   {secondaryTarget?.id === activeSat.id ? 'Secondary Set' : 'Set Secondary'}
                 </button>
               </div>
-            )}
           </>
         )}
       </div>
