@@ -493,7 +493,7 @@ export default function Home() {
 
       {/* Retractable Sidebar */}
       <div
-        className={`absolute top-20 md:top-28 left-4 right-4 md:right-auto md:left-8 z-40 flex flex-col gap-4 p-4 rounded-2xl md:min-w-[300px] transition-all duration-500 origin-top-left ${isSidebarOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
+        className={`absolute top-20 md:top-28 left-4 right-4 md:right-auto md:left-8 z-40 flex flex-col gap-4 p-4 rounded-2xl md:min-w-[300px] max-h-[75vh] overflow-y-auto transition-all duration-500 origin-top-left ${isSidebarOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -675,7 +675,7 @@ export default function Home() {
 
       {/* Minimalist Mission Control (Right) */}
       <div
-        className={`absolute top-20 md:top-28 right-4 left-4 md:left-auto md:right-8 w-auto md:w-80 z-40 space-y-4 flex flex-col gap-4 p-5 rounded-3xl transition-all duration-500 origin-top-right ${showMissionControl ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
+        className={`absolute top-20 md:top-28 right-4 left-4 md:left-auto md:right-8 w-auto md:w-80 z-40 space-y-4 flex flex-col gap-4 p-5 rounded-3xl max-h-[75vh] overflow-y-auto transition-all duration-500 origin-top-right ${showMissionControl ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -722,7 +722,7 @@ export default function Home() {
 
       {/* Sleek Satellite Info HUD (Bottom Right) */}
       <div
-        className={`fixed bottom-4 md:bottom-8 right-4 left-4 md:left-auto md:right-8 z-40 flex flex-col gap-4 p-5 rounded-3xl min-w-0 md:min-w-[320px] transition-all duration-700 ease-in-out ${activeSat ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
+        className={`fixed bottom-4 md:bottom-8 right-4 left-4 md:left-auto md:right-8 z-40 flex flex-col gap-4 p-5 rounded-3xl min-w-0 md:min-w-[320px] max-h-[85vh] overflow-y-auto transition-all duration-700 ease-in-out ${activeSat ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
