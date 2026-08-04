@@ -722,7 +722,7 @@ export default function Home() {
 
       {/* Sleek Satellite Info HUD (Bottom Right) */}
       <div
-        className={`fixed bottom-4 md:bottom-8 right-4 left-4 md:left-auto md:right-8 z-40 flex flex-col gap-4 p-5 rounded-3xl min-w-0 md:min-w-[320px] max-h-[85vh] overflow-y-auto transition-all duration-700 ease-in-out ${activeSat ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
+        className={`fixed bottom-4 md:bottom-8 right-4 left-4 md:left-auto md:right-8 z-40 flex flex-col gap-4 p-5 rounded-3xl min-w-0 md:min-w-[320px] max-h-[calc(100dvh-5rem)] md:max-h-[85vh] overflow-y-auto transition-all duration-700 ease-in-out ${activeSat ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'}`}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
