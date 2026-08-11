@@ -1,23 +1,24 @@
 import * as THREE from 'three';
 
-export function getCountryBorders(geojson: any, radius: number): THREE.Vector3[][] {
-  const lines: THREE.Vector3[][] = [];
+export function getCountryBorders(geojson: any, radius: number): Float32Array {
+  const vertices: number[] = [];
 
   const addLine = (ring: number[][]) => {
-    const points: THREE.Vector3[] = [];
-    for (const [lon, lat] of ring) {
-      const latRad = lat * (Math.PI / 180);
-      const lonRad = lon * (Math.PI / 180);
+    for (let i = 0; i < ring.length - 1; i++) {
+      const p1 = ring[i];
+      const p2 = ring[i + 1];
 
-      // ECEF to Three.js mapping (Three.x = ECEF.x, Three.y = ECEF.z, Three.z = -ECEF.y)
-      // This ensures the Earth is NOT mirrored and aligns perfectly with the satellite orbital physics.
-      const x = radius * Math.cos(latRad) * Math.cos(lonRad);
-      const y = radius * Math.sin(latRad);
-      const z = -radius * Math.cos(latRad) * Math.sin(lonRad);
+      for (const [lon, lat] of [p1, p2]) {
+        const latRad = lat * (Math.PI / 180);
+        const lonRad = lon * (Math.PI / 180);
 
-      points.push(new THREE.Vector3(x, y, z));
+        const x = radius * Math.cos(latRad) * Math.cos(lonRad);
+        const y = radius * Math.sin(latRad);
+        const z = -radius * Math.cos(latRad) * Math.sin(lonRad);
+
+        vertices.push(x, y, z);
+      }
     }
-    lines.push(points);
   };
 
   for (const feature of geojson.features) {
@@ -36,5 +37,5 @@ export function getCountryBorders(geojson: any, radius: number): THREE.Vector3[]
     }
   }
 
-  return lines;
+  return new Float32Array(vertices);
 }

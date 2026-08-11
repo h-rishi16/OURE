@@ -68,19 +68,18 @@ function Earth() {
         <meshBasicMaterial color="#0a0a0a" depthWrite={true} />
       </mesh>
 
-      {/* Country Borders (True Wireframe) */}
-      <group>
-        {borders.map((points, idx) => (
-          <Line
-            key={idx}
-            points={points}
-            color="#a3a3a3"
-            lineWidth={0.8}
-            transparent
-            opacity={0.9}
+      {/* Country Borders (High Performance LineSegments) */}
+      <lineSegments>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={borders.length / 3}
+            array={borders}
+            itemSize={3}
           />
-        ))}
-      </group>
+        </bufferGeometry>
+        <lineBasicMaterial color="#a3a3a3" transparent opacity={0.4} />
+      </lineSegments>
 
       {/* Lat/Lon Grid (Cinematic Wireframe) */}
       <mesh>
