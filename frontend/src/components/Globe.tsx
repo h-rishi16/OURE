@@ -415,7 +415,8 @@ function Satellites({
     const dist = Math.hypot(e.clientX - downState.current.x, e.clientY - downState.current.y);
     const camMoved = e.camera.position.distanceTo(downState.current.cam);
 
-    if (timeDelta > 350 || dist > 10 || camMoved > 0.5) {
+    // Relaxed camera movement threshold (50) so auto-rotation doesn't accidentally cancel clicks
+    if (timeDelta > 500 || dist > 15 || camMoved > 50) {
       return;
     }
 
@@ -531,7 +532,11 @@ function DynamicRaycaster() {
   const { camera, raycaster } = useThree();
   useFrame(() => {
     const dist = camera.position.length();
-    const dynamicThreshold = Math.max(15, dist * 0.0025);
+    // Calculate world-space units per pixel (assuming average 1080p height and 45deg FOV)
+    const visibleHeight = 2 * Math.tan((45 * Math.PI) / 360) * dist;
+    const unitsPerPixel = visibleHeight / 1080;
+    // Maintain a mathematically perfect 5-pixel click radius regardless of zoom
+    const dynamicThreshold = Math.max(15, unitsPerPixel * 5);
     (raycaster as any).params.Points.threshold = dynamicThreshold;
   });
   return null;
