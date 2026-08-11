@@ -9,13 +9,11 @@ export function getCountryBorders(geojson: any, radius: number): THREE.Vector3[]
       const latRad = lat * (Math.PI / 180);
       const lonRad = lon * (Math.PI / 180);
 
-      // ECEF to Three.js right-handed mapping
-      // Three.x = ECEF.y (Lon 90 East goes to Right)
-      // Three.y = ECEF.z (North Pole goes Up)
-      // Three.z = ECEF.x (Lon 0 goes to Front)
-      const x = radius * Math.cos(latRad) * Math.sin(lonRad);
+      // ECEF to Three.js mapping (Three.x = ECEF.x, Three.y = ECEF.z, Three.z = -ECEF.y)
+      // This ensures the Earth is NOT mirrored and aligns perfectly with the satellite orbital physics.
+      const x = radius * Math.cos(latRad) * Math.cos(lonRad);
       const y = radius * Math.sin(latRad);
-      const z = radius * Math.cos(latRad) * Math.cos(lonRad);
+      const z = -radius * Math.cos(latRad) * Math.sin(lonRad);
 
       points.push(new THREE.Vector3(x, y, z));
     }

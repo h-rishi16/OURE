@@ -297,9 +297,9 @@ function Satellites({
           continue;
         }
 
-        posArray[i * 3] = p.y;
+        posArray[i * 3] = p.x;
         posArray[i * 3 + 1] = p.z;
-        posArray[i * 3 + 2] = p.x;
+        posArray[i * 3 + 2] = -p.y;
 
       } else {
         posArray[i * 3] = 9999999;
@@ -324,7 +324,7 @@ function Satellites({
           const pv = satellite.propagate(targetSat.satrec, simDate);
           if (pv.position && typeof pv.position !== 'boolean') {
             const p = pv.position as satellite.EciVec3<number>;
-            targetVec.set(p.y, p.z, p.x);
+            targetVec.set(p.x, p.z, -p.y);
             valid = true;
           }
         }
@@ -351,9 +351,9 @@ function Satellites({
           if (pv.position && pv.velocity && typeof pv.position !== 'boolean' && typeof pv.velocity !== 'boolean') {
             const p = pv.position as satellite.EciVec3<number>;
             const v = pv.velocity as satellite.EciVec3<number>;
-            ellipsoidRef.current.position.set(p.y, p.z, p.x);
+            ellipsoidRef.current.position.set(p.x, p.z, -p.y);
 
-            const velVec = new THREE.Vector3(v.y, v.z, v.x).normalize();
+            const velVec = new THREE.Vector3(v.x, v.z, -v.y).normalize();
             const up = new THREE.Vector3(0, 1, 0);
             const quaternion = new THREE.Quaternion().setFromUnitVectors(up, velVec);
             ellipsoidRef.current.quaternion.copy(quaternion);
@@ -481,7 +481,7 @@ function Satellites({
       <Trajectory focusSatId={secondarySatId} satellites={satellites} color="#eab308" timeOffsetMinutes={timeOffsetMinutes} />
       {escapeTrajectory && escapeTrajectory.length > 0 && (
         <Line
-          points={escapeTrajectory.map(p => new THREE.Vector3(p[1], p[2], p[0]))}
+          points={escapeTrajectory.map(p => new THREE.Vector3(p[0], p[2], -p[1]))}
           color="#00ffff"
           lineWidth={2.5}
           transparent
@@ -507,7 +507,7 @@ function Trajectory({ focusSatId, satellites, color = "#ff0a2a", timeOffsetMinut
       const pv = satellite.propagate(sat.satrec, t);
       if (pv.position && typeof pv.position !== 'boolean') {
         const p = pv.position as satellite.EciVec3<number>;
-        pts.push(new THREE.Vector3(p.y, p.z, p.x));
+        pts.push(new THREE.Vector3(p.x, p.z, -p.y));
       }
     }
     return pts;
