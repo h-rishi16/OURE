@@ -19,7 +19,8 @@ Built for mission-critical speed and mathematical rigor, OURE processes Space-Tr
 - **KD-Tree Fleet Screening:** Distributed epoch-bucketed $O(N \log N)$ screening of entire satellite constellations against the full NORAD catalog.
 - **Enterprise Observability:** Fully instrumented FastAPI REST API and Celery/Redis background workers, seamlessly integrated with **Prometheus and Grafana** for real-time physics engine throughput and risk quantification latency monitoring.
 - **Interactive Visualizations:** 3D ECI encounter geometry and massive orbital fleet visualization using Next.js, React Three Fiber, and Three.js.
-
+  - **Hybrid CPU/GPU Engine:** Offloads rendering for 30,000+ active satellites to a custom WebGL Vertex Shader for buttery-smooth 144Hz performance, while retaining precise CPU-based spatial raycasting for click interactions.
+  - **High-Fidelity Planetary Data:** Renders Earth using high-resolution (50m) topographical GeoJSON borders for exact geographical precision.
 ## Installation & Deployment
 
 OURE can be run locally via CLI, launched via a lightweight web interface, or deployed as a full enterprise microservice stack.
