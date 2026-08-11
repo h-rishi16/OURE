@@ -187,15 +187,17 @@ function Satellites({
     return sats;
   }, [tleData]);
 
-  const [positions, colors] = useMemo(() => {
+  const [positions, colors, velocities, updateTimes] = useMemo(() => {
     const pos = new Float32Array(satellites.length * 3);
     const col = new Float32Array(satellites.length * 3);
+    const vel = new Float32Array(satellites.length * 3);
+    const upT = new Float32Array(satellites.length);
     satellites.forEach((sat, i) => {
       col[i * 3] = sat.color[0];
       col[i * 3 + 1] = sat.color[1];
       col[i * 3 + 2] = sat.color[2];
     });
-    return [pos, col];
+    return [pos, col, vel, upT];
   }, [satellites]);
 
   const isZooming = useRef(false);
@@ -268,8 +270,18 @@ function Satellites({
 
     const posAttr = meshRef.current.geometry.attributes.position;
     const posArray = posAttr.array as Float32Array;
+    const velAttr = meshRef.current.geometry.attributes.velocity;
+    const velArray = velAttr ? velAttr.array as Float32Array : null;
+    const timeAttr = meshRef.current.geometry.attributes.updateTime;
+    const timeArray = timeAttr ? timeAttr.array as Float32Array : null;
 
-    const simDate = new Date(initialTime + simElapsedTime + manualTimeOffset);
+    const simTimeMs = initialTime + simElapsedTime + manualTimeOffset;
+    const simDate = new Date(simTimeMs);
+
+    const material = meshRef.current.material as any;
+    if (material && material.userData && material.userData.shader) {
+      material.userData.shader.uniforms.uSimTime.value = simTimeMs;
+    }
 
     const chunkSize = Math.ceil(satellites.length / UPDATE_CHUNKS);
     const startIdx = chunkRef.current * chunkSize;
@@ -287,8 +299,9 @@ function Satellites({
 
 
       const pv = satellite.propagate(sat.satrec, simDate);
-      if (pv.position && typeof pv.position !== 'boolean') {
+      if (pv.position && pv.velocity && typeof pv.position !== 'boolean' && typeof pv.velocity !== 'boolean') {
         const p = pv.position as satellite.EciVec3<number>;
+        const v = pv.velocity as satellite.EciVec3<number>;
         const distSq = p.x * p.x + p.y * p.y + p.z * p.z;
         if (distSq > 43000 * 43000 && sat.id !== '43205') {
           posArray[i * 3] = 9999999;
@@ -301,6 +314,13 @@ function Satellites({
         posArray[i * 3 + 1] = p.z;
         posArray[i * 3 + 2] = -p.y;
 
+        if (velArray && timeArray) {
+          velArray[i * 3] = v.x;
+          velArray[i * 3 + 1] = v.z;
+          velArray[i * 3 + 2] = -v.y;
+          timeArray[i] = simTimeMs;
+        }
+
       } else {
         posArray[i * 3] = 9999999;
         posArray[i * 3 + 1] = 9999999;
@@ -308,6 +328,8 @@ function Satellites({
       }
     }
     posAttr.needsUpdate = true;
+    if (velAttr) velAttr.needsUpdate = true;
+    if (timeAttr) timeAttr.needsUpdate = true;
     chunkRef.current = (chunkRef.current + 1) % UPDATE_CHUNKS;
 
     if (focusSatId && controlsRef?.current) {
@@ -444,6 +466,18 @@ function Satellites({
           array={colors}
           itemSize={3}
         />
+        <bufferAttribute
+          attach="attributes-velocity"
+          count={positions.length / 3}
+          array={velocities}
+          itemSize={3}
+        />
+        <bufferAttribute
+          attach="attributes-updateTime"
+          count={positions.length / 3}
+          array={updateTimes}
+          itemSize={1}
+        />
       </bufferGeometry>
       <pointsMaterial
         size={120}
@@ -453,6 +487,26 @@ function Satellites({
         sizeAttenuation={true}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
+        onBeforeCompile={(shader) => {
+          shader.uniforms.uSimTime = { value: 0 };
+          shader.vertexShader = `
+            uniform float uSimTime;
+            attribute vec3 velocity;
+            attribute float updateTime;
+            ${shader.vertexShader}
+          `.replace(
+            `#include <begin_vertex>`,
+            `
+            vec3 transformed = vec3( position );
+            float dt = (uSimTime - updateTime) / 1000.0;
+            // Cap delta time to prevent wild extrapolation during initial load or heavy lag
+            if (dt > 0.0 && dt < 2.0 && updateTime > 0.0) {
+              transformed += velocity * dt;
+            }
+            `
+          );
+          (meshRef.current as any).material.userData.shader = shader;
+        }}
       />
     </points>
     <group ref={ellipsoidRef} visible={false}>
