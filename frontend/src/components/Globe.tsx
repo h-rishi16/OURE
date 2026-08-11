@@ -280,7 +280,7 @@ function Satellites({
 
     const material = meshRef.current.material as any;
     if (material && material.userData && material.userData.shader) {
-      material.userData.shader.uniforms.uSimTime.value = simTimeMs;
+      material.userData.shader.uniforms.uSimTime.value = simElapsedTime / 1000.0;
     }
 
     const chunkSize = Math.ceil(satellites.length / UPDATE_CHUNKS);
@@ -318,7 +318,7 @@ function Satellites({
           velArray[i * 3] = v.x;
           velArray[i * 3 + 1] = v.z;
           velArray[i * 3 + 2] = -v.y;
-          timeArray[i] = simTimeMs;
+          timeArray[i] = simElapsedTime / 1000.0;
         }
 
       } else {
@@ -498,7 +498,7 @@ function Satellites({
             `#include <begin_vertex>`,
             `
             vec3 transformed = vec3( position );
-            float dt = (uSimTime - updateTime) / 1000.0;
+            float dt = uSimTime - updateTime;
             // Cap delta time to prevent wild extrapolation during initial load or heavy lag
             if (dt > 0.0 && dt < 2.0 && updateTime > 0.0) {
               transformed += velocity * dt;
