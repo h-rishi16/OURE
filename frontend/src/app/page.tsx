@@ -346,7 +346,7 @@ export default function Home() {
           tleData={tleData}
           filter={filter}
           onSelectSat={setActiveSat}
-          focusSatId={activeSat?.id}
+          focusSatId={activeSat?.id || primaryTarget?.id}
           secondarySatId={secondaryTarget?.id}
           timeOffsetMinutes={timeOffsetMinutes}
           escapeTrajectory={escapeTrajectory}
@@ -655,7 +655,17 @@ export default function Home() {
 
       <button
         className="absolute top-4 right-4 md:top-8 md:right-8 z-50 flex items-center gap-2 lg:gap-4 px-3 lg:px-4 py-2 lg:py-3 rounded-2xl cursor-pointer group"
-        onClick={() => setShowMissionControl(!showMissionControl)}
+        onClick={() => {
+          if (showMissionControl) {
+            setShowMissionControl(false);
+            setActiveSat(null);
+            setPrimaryTarget(null);
+            setSecondaryTarget(null);
+            setEscapeTrajectory(null);
+          } else {
+            setShowMissionControl(true);
+          }
+        }}
         style={{
           background: 'rgba(10, 10, 10, 0.65)',
           backdropFilter: 'blur(16px)',
@@ -688,7 +698,7 @@ export default function Home() {
       >
         <div className="flex justify-between items-center">
             <h3 className="text-white text-xs font-semibold uppercase tracking-[0.15em]">System Link</h3>
-            <button onClick={() => { setShowMissionControl(false); setActiveSat(null); setPrimaryTarget(null); setSecondaryTarget(null); }} className="text-[#737373] hover:text-white p-1 rounded-full transition-colors">
+            <button onClick={() => { setShowMissionControl(false); setActiveSat(null); setPrimaryTarget(null); setSecondaryTarget(null); setEscapeTrajectory(null); }} className="text-[#737373] hover:text-white p-1 rounded-full transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>

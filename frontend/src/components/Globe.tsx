@@ -334,7 +334,7 @@ function Satellites({
     if (focusSatId && controlsRef?.current) {
       const targetSat = satellites.find(s => s.id === focusSatId);
       if (targetSat || focusSatId === 'JWST-1') {
-        let targetVec = new THREE.Vector3();
+        const targetVec = new THREE.Vector3();
         let valid = false;
 
         if (focusSatId === 'JWST-1') {
