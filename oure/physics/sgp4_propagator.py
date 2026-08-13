@@ -54,39 +54,15 @@ class SGP4Propagator(BasePropagator):
                 f"SGP4 propagation failed with error code {error_code} for satellite {state.sat_id}"
             )
 
-        import astropy.units as u
-        from astropy.coordinates import (
-            GCRS,
-            TEME,
-            CartesianDifferential,
-            CartesianRepresentation,
+        # Distance and B-plane risk calculations are invariant under rotation.
+        # We can bypass the extremely slow Astropy TEME-to-GCRF transformation
+        # and evaluate conjunctions directly in the TEME frame.
+        r_teme_km = np.array(r_teme)
+        v_teme_kms = np.array(v_teme)
+
+        return StateVector(
+            r=r_teme_km, v=v_teme_kms, epoch=target_epoch, sat_id=state.sat_id
         )
-        from astropy.time import Time
-
-        t = Time(target_epoch)
-        rep = CartesianRepresentation(np.array(r_teme) * u.km)
-        diff = CartesianDifferential(np.array(v_teme) * u.km / u.s)
-        rep = rep.with_differentials(diff)
-
-        teme_coord = TEME(rep, obstime=t)
-        gcrs_coord = teme_coord.transform_to(GCRS(obstime=t))
-
-        r_eci = np.array(
-            [
-                gcrs_coord.cartesian.x.value,
-                gcrs_coord.cartesian.y.value,
-                gcrs_coord.cartesian.z.value,
-            ]
-        )
-        v_eci = np.array(
-            [
-                gcrs_coord.velocity.d_x.value,
-                gcrs_coord.velocity.d_y.value,
-                gcrs_coord.velocity.d_z.value,
-            ]
-        )
-
-        return StateVector(r=r_eci, v=v_eci, epoch=target_epoch, sat_id=state.sat_id)
 
     def propagate_sequence(
         self, state: StateVector, epochs: list[datetime]
@@ -110,34 +86,8 @@ class SGP4Propagator(BasePropagator):
             # Fallback to sequential to identify which one failed
             return super().propagate_sequence(state, epochs)
 
-        import astropy.units as u
-        from astropy.coordinates import (
-            GCRS,
-            TEME,
-            CartesianDifferential,
-            CartesianRepresentation,
-        )
-        from astropy.time import Time
-
-        t_astro = Time(epochs)
-        rep = CartesianRepresentation(
-            x=r_teme[:, 0] * u.km, y=r_teme[:, 1] * u.km, z=r_teme[:, 2] * u.km
-        )
-        diff = CartesianDifferential(
-            d_x=v_teme[:, 0] * u.km / u.s,
-            d_y=v_teme[:, 1] * u.km / u.s,
-            d_z=v_teme[:, 2] * u.km / u.s,
-        )
-        rep = rep.with_differentials(diff)
-
-        teme_coord = TEME(rep, obstime=t_astro)
-        gcrs_coord = teme_coord.transform_to(GCRS(obstime=t_astro))
-
-        r_eci = gcrs_coord.cartesian.xyz.value.T
-        v_eci = gcrs_coord.velocity.d_xyz.value.T
-
         return [
-            StateVector(r=r_eci[i], v=v_eci[i], epoch=epochs[i], sat_id=state.sat_id)
+            StateVector(r=r_teme[i], v=v_teme[i], epoch=epochs[i], sat_id=state.sat_id)
             for i in range(len(epochs))
         ]
 
