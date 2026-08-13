@@ -12,14 +12,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-          
+
       - name: Build Next.js Frontend
         run: |
           cd frontend
@@ -27,7 +27,7 @@ jobs:
           npm run build
           # Compress the build so it transfers safely and quickly over SCP
           tar -czf ../next-build.tar.gz .next
-          
+
       - name: Transfer built assets to Oracle Server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -36,7 +36,7 @@ jobs:
           key: ${{ secrets.ORACLE_SSH_KEY }}
           source: "next-build.tar.gz"
           target: "~/"
-          
+
       - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -46,26 +46,26 @@ jobs:
           script_stop: true
           script: |
             cd ~/oure || cd ~/OURE || exit 1
-            
+
             git fetch origin
             git reset --hard origin/main
             git pull origin main
-            
+
             # Wipe old cache
             rm -rf ./frontend/.next
-            
+
             # Extract the new build directly into the frontend directory
             mv ~/next-build.tar.gz ./ || true
             tar -xzf next-build.tar.gz -C frontend/
             rm next-build.tar.gz
-            
+
             # Force Docker to completely rebuild
             docker compose --env-file keys.env build --no-cache frontend
-            
+
             # Recreate frontend and force Nginx to recreate so its DNS cache updates
             docker compose --env-file keys.env up -d --always-recreate-deps
-            
+
             # Explicitly restart Nginx just to be 100% certain it flushes DNS
             docker compose restart nginx
-            
+
             docker image prune -f

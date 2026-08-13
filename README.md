@@ -1,15 +1,29 @@
-# OURE (Orbital Uncertainty & Risk Engine)
+<div align="center">
 
-![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)
-![Coverage](https://img.shields.io/badge/coverage-86%25-brightgreen.svg)
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-v1.0.0-orange.svg)
+# OURE
+### Orbital Uncertainty & Risk Engine
 
-OURE is a high-performance, enterprise-grade Space Situational Awareness (SSA) platform designed for orbital risk prediction, collision avoidance optimization, fragmentation modeling, and massive fleet screening.
+![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python&logoColor=white)
+[![Deploy Status](https://img.shields.io/github/actions/workflow/status/h-rishi16/oure/deploy.yml?style=for-the-badge&logo=github&label=Deploy)](https://github.com/h-rishi16/oure/actions)
+[![Test Status](https://img.shields.io/github/actions/workflow/status/h-rishi16/oure/ci.yml?style=for-the-badge&logo=pytest&label=Tests)](https://github.com/h-rishi16/oure/actions)
+![Stars](https://img.shields.io/github/stars/h-rishi16/oure?style=for-the-badge&color=yellow)
+![License](https://img.shields.io/github/license/h-rishi16/oure?style=for-the-badge)
 
-Built for mission-critical speed and mathematical rigor, OURE processes Space-Track Two-Line Elements (TLEs), NASA CDDIS data, and CCSDS Conjunction Data Messages (CDMs). It propagates uncertainty using vectorized Monte Carlo simulations and evaluates Probability of Collision ($P_c$) using Foster's algorithm on the encounter B-plane.
+*A high-performance, enterprise-grade Space Situational Awareness (SSA) platform designed for orbital risk prediction, collision avoidance optimization, fragmentation modeling, and massive fleet screening.*
 
-## Key Features
+<img src="https://upload.wikimedia.org/wikipedia/commons/b/b4/GPS_Satellite_Constellation_Animation.gif" alt="Orbital Fleet Constellation" width="500" style="border-radius: 10px; margin: 20px 0;"/>
+
+[Explore the Live Demo](https://oure-pi.vercel.app) · [Report Bug](https://github.com/h-rishi16/oure/issues/new?template=bug_report.md)
+
+</div>
+
+---
+
+## Mission Brief
+
+Built for mission-critical speed and mathematical rigor, OURE processes **Space-Track Two-Line Elements (TLEs)**, **NASA CDDIS data**, and **CCSDS Conjunction Data Messages (CDMs)**. It propagates uncertainty using vectorized Monte Carlo simulations and evaluates Probability of Collision ($P_c$) using Foster's algorithm on the encounter B-plane.
+
+## Core Capabilities
 
 - **Multi-Fidelity Physics Engine:** Native SGP4 propagation combined with a High Precision Orbit Propagator (HPOP) featuring J2 oblateness, Solar Radiation Pressure (SRP), and atmospheric drag perturbations.
 - **NASA-Grade Integration:** Supports parsing NASA CDDIS CPF (Satellite Laser Ranging) files for centimeter-level accuracy and implements the NASA MSFC Jacchia analytical atmospheric model for highly accurate solar flux drag modifications.
@@ -17,15 +31,21 @@ Built for mission-critical speed and mathematical rigor, OURE processes Space-Tr
 - **NASA Standard Breakup Model:** Simulation of hypervelocity impacts and debris cloud dispersion.
 - **Sensor Fusion:** Extended Kalman Filter (EKF) updates to simulate commercial radar tasking and covariance collapse.
 - **KD-Tree Fleet Screening:** Distributed epoch-bucketed $O(N \log N)$ screening of entire satellite constellations against the full NORAD catalog.
+
+## Mission Control (UI & Observability)
+
 - **Enterprise Observability:** Fully instrumented FastAPI REST API and Celery/Redis background workers, seamlessly integrated with **Prometheus and Grafana** for real-time physics engine throughput and risk quantification latency monitoring.
 - **Interactive Visualizations:** 3D ECI encounter geometry and massive orbital fleet visualization using Next.js, React Three Fiber, and Three.js.
   - **Hybrid CPU/GPU Engine:** Offloads rendering for 30,000+ active satellites to a custom WebGL Vertex Shader for buttery-smooth 144Hz performance, while retaining precise CPU-based spatial raycasting for click interactions.
   - **High-Fidelity Planetary Data:** Renders Earth using high-resolution (50m) topographical GeoJSON borders for exact geographical precision.
-## Installation & Deployment
+
+---
+
+## Launch Codes (Installation)
 
 OURE can be run locally via CLI, launched via a lightweight web interface, or deployed as a full enterprise microservice stack.
 
-### 1. Global Installation (CLI & Web)
+### 1. Local Mission Control (CLI & Web)
 
 You can install OURE globally using `pip` (or `uv`):
 
@@ -42,7 +62,7 @@ npm install
 npm run dev
 ```
 
-### 2. Enterprise Stack (Docker Compose)
+### 2. Enterprise Fleet Stack (Docker Compose)
 
 For production environments, OURE deploys as a fully isolated 6-service stack including the API, Background Workers, Redis Broker, Operations Dashboard, Prometheus metrics, and a Grafana observability suite.
 
@@ -55,10 +75,10 @@ cd oure
 docker compose up --build -d
 ```
 
-* **Operations Dashboard (Next.js 3D Globe):** [http://localhost](http://localhost) (Live Demo: [http://92.4.73.195](http://92.4.73.195))
-* **API Documentation:** [http://localhost/api/docs](http://localhost/api/docs)
-* **Grafana (Observability):** [http://localhost/grafana](http://localhost/grafana) *(Login: admin / admin)*
-* **Prometheus Metrics:** [http://localhost/prometheus](http://localhost/prometheus)
+- **Operations Dashboard (Next.js 3D Globe):** [http://localhost](http://localhost)
+- **API Documentation:** [http://localhost/api/docs](http://localhost/api/docs)
+- **Grafana (Observability):** [http://localhost/grafana](http://localhost/grafana) *(Login: admin / admin)*
+- **Prometheus Metrics:** [http://localhost/prometheus](http://localhost/prometheus)
 
 ### 3. Continuous Deployment (CI/CD)
 
@@ -68,9 +88,12 @@ Any commit pushed to the `main` branch automatically triggers a deployment to th
 2. Build artifacts are securely transferred to the remote server via SSH tar archives (preventing memory exhaustion on micro-VMs).
 3. The server safely rebuilds the Docker container with `--no-cache` and restarts the Nginx reverse proxy.
 
-## CLI Usage
+---
+
+## Ground Station Terminal (CLI)
 
 ### 1. Analyze a Conjunction
+Assess the collision probability between two orbiting objects.
 ```bash
 oure analyze --primary 25544 --secondary 43205 --look-ahead 72
 ```
@@ -93,7 +116,9 @@ Simulate a "What-if" collision between two objects:
 oure shatter --primary 25544 --secondary 43205 --fragments 5000
 ```
 
-## Architecture & Security
+---
+
+## Spacecraft Architecture & Security
 
 OURE enforces a strict, decoupled 5-layer architecture, hardened against Resource Exhaustion (DoS) and Numerical Singularities:
 1. **Core:** Immutable data models (`StateVector`, `CovarianceMatrix`) and Prometheus Metrics Managers.
@@ -102,7 +127,9 @@ OURE enforces a strict, decoupled 5-layer architecture, hardened against Resourc
 4. **Uncertainty:** Memory-hardened Vectorized Monte Carlo ensembles (capped at 100k samples), STM generation, and EKF Sensor updates.
 5. **Conjunction/Risk:** TCA Golden-section search, Robust Foster $P_c$ math utilizing Moore-Penrose pseudo-inverses (`np.linalg.pinv`) to prevent singular matrix crashes, and SLSQP maneuver optimization.
 
-## Testing & Quality
+---
+
+## Flight Readiness (Testing & Quality)
 
 OURE maintains strict engineering standards, verified by GitHub Actions CI/CD:
 - **Test Coverage:** 88%+ enforced via `pytest-cov` across 70+ test suites.
@@ -113,6 +140,18 @@ OURE maintains strict engineering standards, verified by GitHub Actions CI/CD:
 uv run pytest tests/ -v --cov=oure
 ```
 
-## License
+---
 
-MIT License
+## AI Automaton Fleet (Issue Triage)
+
+This repository is equipped with **Jules AI Fleet Automation**. If you open an issue, an AI agent may automatically pick it up, plan a fix, write the code, and submit a Pull Request—like a swarm of autonomous repair drones maintaining a space station.
+
+*To enable this, the repository owner must set `JULES` in the GitHub Actions Secrets.*
+
+---
+
+<div align="center">
+  <p><b>License</b></p>
+  <p>OURE is released under the MIT License.</p>
+  <p><i>"Ad astra per aspera"</i></p>
+</div>
