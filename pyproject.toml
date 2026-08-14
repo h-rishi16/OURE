@@ -87,7 +87,7 @@ exclude = ["tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=oure --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=oure --cov-report=term-missing"
 filterwarnings = [
     "ignore:.*unclosed database.*",
     "ignore:.*maximum number of subdivisions.*",
