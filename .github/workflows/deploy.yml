@@ -44,6 +44,7 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script_stop: true
+          timeout: 10m
           script: |
             cd ~/oure || cd ~/OURE || exit 1
 
