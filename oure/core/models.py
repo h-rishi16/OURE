@@ -189,6 +189,7 @@ class RiskResult:
     hard_body_radius_m: float
     b_plane_sigma_x: float
     b_plane_sigma_z: float
+    max_pc: float = 0.0
     warning_level: str = "GREEN"
     method: str = "Foster2D"
     monte_carlo_samples: int = 0

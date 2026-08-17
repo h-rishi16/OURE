@@ -52,6 +52,7 @@ class RiskCalculator:
             res = RiskResult(
                 conjunction=event,
                 pc=0.0,
+                max_pc=0.0,
                 combined_covariance=np.zeros((2, 2)),
                 warning_level="GREEN",
                 b_plane_sigma_x=0.0,
@@ -72,6 +73,12 @@ class RiskCalculator:
             projection.b_vec_2d, projection.C_2d, propagation_age_hours
         )
 
+        # Calculate the maximum probability bound (Alfano) to detect Probability Dilution
+        alfano = AlfanoPcCalculator(self.hard_body_radius_km)
+        max_pc = alfano.compute(
+            projection.b_vec_2d, projection.C_2d, propagation_age_hours
+        )
+
         sigma_x = np.sqrt(projection.C_2d[0, 0])
         sigma_z = np.sqrt(projection.C_2d[1, 1])
 
@@ -80,6 +87,7 @@ class RiskCalculator:
         result = RiskResult(
             conjunction=event,
             pc=pc,
+            max_pc=max_pc,
             combined_covariance=projection.C_2d,
             hard_body_radius_m=self.hard_body_radius_km * 1000,
             b_plane_sigma_x=sigma_x,
