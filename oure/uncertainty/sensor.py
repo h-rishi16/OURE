@@ -1,8 +1,13 @@
 """
-OURE Sensor Tasking - Unscented Schmidt-Kalman Filter (USKF) Observation Update
-================================================================================
-Simulates the reduction in covariance when new radar measurements are taken,
-incorporating Adaptive State Noise Compensation (ASNC) for Covariance Realism.
+OURE Sensor Tasking - Schmidt-Kalman Filter Observation Update
+
+Provides measurement update logic for satellite covariance matrices.
+
+Features:
+- Schmidt-Kalman Filter with Adaptive State Noise Compensation (ASNC).
+- Supports radar tasks (range, azimuth, elevation) from commercial networks (e.g. LeoLabs).
+- Uses Joseph-form update for numerical stability and positive-definiteness.
+- Chi-Square residual validation to reject corrupted tracks.
 """
 
 import numpy as np
@@ -11,9 +16,9 @@ from scipy.stats import chi2
 from oure.core.models import CovarianceMatrix
 
 
-class UnscentedSchmidtKalmanFilter:
+class SchmidtKalmanFilter:
     """
-    Unscented Schmidt-Kalman Filter (USKF) with Adaptive State Noise Compensation (ASNC).
+    Schmidt-Kalman Filter with Adaptive State Noise Compensation (ASNC).
     Replaces the standard EKF to ensure Covariance Realism during observation updates.
     """
 
@@ -124,4 +129,4 @@ class UnscentedSchmidtKalmanFilter:
 
 
 # Alias for backwards compatibility if needed
-SensorTaskingSimulator = UnscentedSchmidtKalmanFilter
+SensorTaskingSimulator = SchmidtKalmanFilter

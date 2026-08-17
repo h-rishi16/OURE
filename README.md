@@ -26,10 +26,10 @@ Built for mission-critical speed and mathematical rigor, OURE processes **Space-
 ## Core Capabilities
 
 - **Multi-Fidelity Physics Engine:** Native SGP4 propagation combined with a High Precision Orbit Propagator (HPOP) featuring J2 oblateness, Solar Radiation Pressure (SRP), and atmospheric drag perturbations.
-- **NASA-Grade Integration:** Supports parsing NASA CDDIS CPF (Satellite Laser Ranging) files for centimeter-level accuracy and implements the NASA MSFC Jacchia analytical atmospheric model for highly accurate solar flux drag modifications.
+- **NASA-Grade Integration:** Supports parsing NASA CDDIS CPF (Satellite Laser Ranging) files for centimeter-level accuracy and implements a simplified exponential atmospheric density fit inspired by the Jacchia model for solar flux drag modifications.
 - **Collision Avoidance (SLSQP):** Mathematical maneuver optimization to find minimum-fuel 3D Delta-V vectors that mitigate collision risk below safety thresholds.
-- **NASA Standard Breakup Model:** Simulation of hypervelocity impacts and debris cloud dispersion.
-- **Sensor Fusion:** Extended Kalman Filter (EKF) updates to simulate commercial radar tasking and covariance collapse.
+- **NASA Standard Breakup Model (Simplified):** Simplified simulation of hypervelocity impacts and debris cloud dispersion inspired by the NASA Standard Breakup Model.
+- **Sensor Fusion:** Linear Joseph-form covariance updates with Schmidt consider-parameters (Schmidt-Kalman Filter) to simulate commercial radar tasking and covariance collapse.
 - **KD-Tree Fleet Screening:** Distributed epoch-bucketed $O(N \log N)$ screening of entire satellite constellations against the full NORAD catalog.
 
 ## Mission Control (UI & Observability)
@@ -132,7 +132,7 @@ OURE enforces a strict, decoupled 5-layer architecture, hardened against Resourc
 ## Flight Readiness (Testing & Quality)
 
 OURE maintains strict engineering standards, verified by GitHub Actions CI/CD:
-- **Test Coverage:** 88%+ enforced via `pytest-cov` across 70+ test suites.
+- **Test Coverage:** 83%+ measured via `pytest-cov` across 50+ test files and 140+ individual tests.
 - **Static Analysis:** Strict `mypy` typing and `ruff` linting.
 - **Numerical Stability:** Joseph-form covariance updates, eigenvalue-ordered risk projection with singularity protection.
 

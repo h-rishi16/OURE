@@ -11,7 +11,7 @@ The system calculates and reports a "Safe" $P_c$ (e.g., $< 10^{-6}$) for an impe
 
 **A. Probability Dilution Region**
 *   **Cause:** If covariance (uncertainty) grows excessively large, the probability density spreads out so thinly that the integral over the collision cross-section drops to near zero.
-*   **Defense:** OURE implements **Covariance Realism** via the Unscented Schmidt-Kalman Filter (USKF) with Adaptive State Noise Compensation (ASNC). The system validates residuals using $\chi^2$ (Chi-Square) testing to ensure covariance matrices are statistically realistic and not artificially inflated.
+*   **Defense:** OURE implements **Covariance Realism** via the Schmidt-Kalman Filter (SKF) with Adaptive State Noise Compensation (ASNC). The system validates residuals using $\chi^2$ (Chi-Square) testing to ensure covariance matrices are statistically realistic and not artificially inflated.
 
 **B. Non-Linearity Breakdown (Foster's Assumption Failure)**
 *   **Cause:** The standard 2D Foster algorithm assumes linear relative motion during the encounter. For low relative velocities or highly curved trajectories (e.g., geostationary orbits), this linearization breaks down, resulting in an invalid $P_c$.
