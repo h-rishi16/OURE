@@ -30,6 +30,10 @@ class RiskCalculator:
         self.pc_calculator: Any
         if self.method == "alfano":
             self.pc_calculator = AlfanoPcCalculator(self.hard_body_radius_km)
+        elif self.method == "chan":
+            from .chan import ChanPcCalculator
+
+            self.pc_calculator = ChanPcCalculator(self.hard_body_radius_km)
         else:
             self.pc_calculator = FosterPcCalculator(self.hard_body_radius_km)
 
