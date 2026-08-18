@@ -64,6 +64,7 @@ dependencies = [
     "celery>=5.3",
     "redis>=5.0",
     "prometheus-fastapi-instrumentator>=6.1.0",
+    "Cython>=3.0",
 ]
 
 [project.scripts]
