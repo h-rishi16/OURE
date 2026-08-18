@@ -58,7 +58,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install build dependencies
-        run: python -m pip install build hatchling
+        run: python -m pip install build hatchling Cython numpy setuptools
+
+      - name: Build Cython extensions
+        run: python setup_cython.py build_ext --inplace
 
       - name: Build Wheel and sdist
         run: python -m build
