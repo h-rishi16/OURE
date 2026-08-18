@@ -50,7 +50,6 @@ jobs:
 
             git fetch origin
             git reset --hard origin/main
-            git pull origin main
 
             # Wipe old cache
             rm -rf ./frontend/.next

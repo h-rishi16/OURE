@@ -92,9 +92,11 @@ class RiskCalculator:
             hard_body_radius_m=self.hard_body_radius_km * 1000,
             b_plane_sigma_x=sigma_x,
             b_plane_sigma_z=sigma_z,
-            method=getattr(self.pc_calculator, "method", None)
-            and self.pc_calculator.method.value
-            or "Alfano_Max_Prob",
+            method=(
+                getattr(self.pc_calculator.method, "value", self.pc_calculator.method)
+                if hasattr(self.pc_calculator, "method")
+                else "Alfano_Max_Prob"
+            ),
         )
 
         result.warning_level = alert.classify(result)

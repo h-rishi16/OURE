@@ -3,14 +3,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { SatelliteData } from '../components/Globe';
-import { Play, Pause, FastForward, Info, Settings, Search, AlertTriangle, Shield, Crosshair, Target, ExternalLink, ChevronRight, Rocket, Zap, X, Globe as GlobeIcon, Menu, Clock } from 'lucide-react';
+import { Search, AlertTriangle, Target, ChevronRight, X, Globe as GlobeIcon, Menu, Clock } from 'lucide-react';
 import * as satellite from 'satellite.js';
 import CustomCursor from '../components/CustomCursor';
 
 // Dynamically import Globe to avoid SSR issues with Three.js
 const Globe = dynamic(() => import('../components/Globe'), { ssr: false });
 
-import { PixelAstronaut } from '../components/ui/PixelAstronaut';
 import { MissionControlPanel } from '../components/ui/MissionControlPanel';
 import { AnalysisOverlay } from '../components/ui/AnalysisOverlay';
 import { SidebarPanel } from '../components/ui/SidebarPanel';
@@ -111,7 +110,7 @@ export default function Home() {
     const query = searchQuery.toLowerCase();
 
     // 🛸 Easter Eggs Manual Injection
-    if ("starman tesla roadster 43205".includes(query)) {
+    if (query.length >= 4 && "starman tesla roadster 43205".includes(query)) {
       results.push({
         name: "STARMAN (TESLA ROADSTER) 🚗",
         id: "43205",
@@ -346,7 +345,7 @@ export default function Home() {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <div style={{ fontWeight: 800, fontSize: '1.25rem', fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }} className="text-white tracking-tight">
+        <div style={{ fontWeight: 800, fontSize: '1.25rem', fontFamily: 'var(--font-display, "Space Grotesk")' }} className="text-white tracking-tight">
           OURE<span className="text-[#a3a3a3]">.</span>
         </div>
       </div>
@@ -551,7 +550,7 @@ export default function Home() {
               <div className="w-full h-full flex flex-col items-center justify-center text-center animate-in fade-in duration-700">
                 <GlobeIcon className="w-12 h-12 text-white mb-6 animate-pulse" />
                 <h2 className="text-white text-[10px] font-bold uppercase tracking-[0.3em] mb-4">System Online</h2>
-                <h3 className="text-white text-4xl font-bold tracking-widest mb-6" style={{ fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }}>
+                <h3 className="text-white text-4xl font-bold tracking-widest mb-6" style={{ fontFamily: 'var(--font-display, "Space Grotesk")' }}>
                   WELCOME TO OURE
                 </h3>
                 <p className="text-[#a3a3a3] font-mono text-xs leading-relaxed max-w-md mx-auto mb-12">
@@ -574,7 +573,7 @@ export default function Home() {
                   <div>
                     <div className="flex items-center gap-4 mb-10">
                       <GlobeIcon className="w-6 h-6 text-white" />
-                      <h1 className="text-2xl font-bold tracking-[0.1em] uppercase text-white" style={{ fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }}>
+                      <h1 className="text-2xl font-bold tracking-[0.1em] uppercase text-white" style={{ fontFamily: 'var(--font-display, "Space Grotesk")' }}>
                         OURE<span className="text-[#a3a3a3]">.</span>
                       </h1>
                     </div>

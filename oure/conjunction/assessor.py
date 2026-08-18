@@ -201,12 +201,20 @@ class ConjunctionAssessor:
         ]
 
         conjunction_events: list[ConjunctionEvent] = []
-        with concurrent.futures.ProcessPoolExecutor(max_workers=workers) as executor:
-            # We can't easily pickle the propagators/objects for multiprocessing in a quick patch
-            # so we'll just mock the parallel execution by chunking but running sequentially here
-            # Or if objects are picklable, we can map.
-            pass
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+            futures = [
+                executor.submit(
+                    self.find_conjunctions,
+                    primary,
+                    primary_cov,
+                    primary_propagator,
+                    chunk,
+                    duration_s / 3600.0,
+                )
+                for chunk in chunks
+            ]
+            for future in concurrent.futures.as_completed(futures):
+                conjunction_events.extend(future.result())
 
-        return self.find_conjunctions(
-            primary, primary_cov, primary_propagator, secondaries, duration_s
-        )
+        conjunction_events.sort(key=lambda e: e.miss_distance_km)
+        return conjunction_events

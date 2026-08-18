@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Stars, useTexture } from '@react-three/drei';
+import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import * as satellite from 'satellite.js';
 
@@ -200,7 +200,6 @@ function Satellites({
   }, [satellites]);
 
   const isZooming = useRef(false);
-  const zoomTimeout = useRef<any>(null); // Kept to avoid breaking any stray references, but setting it to unused state
   const isBootZooming = useRef(true);
   const prevFocusRef = useRef<string | null | undefined>(null);
 

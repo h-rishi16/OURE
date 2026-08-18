@@ -25,6 +25,13 @@ dist/
 build/
 *.egg-info/
 *.egg
+*.so
+*.c
+!frontend/**/*.c
+
+# Frontend
+.next/
+node_modules/
 
 # IDEs
 .vscode/

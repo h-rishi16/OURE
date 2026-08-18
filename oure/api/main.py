@@ -128,13 +128,13 @@ async def analyze_cdm(
             miss_distance_km=result.conjunction.miss_distance_km,
             rel_velocity_km_s=result.conjunction.relative_velocity_km_s,
         )
-    except Exception:
+    except Exception as e:
         import logging
 
         logging.getLogger("oure.api").exception("CDM processing failed")
         raise HTTPException(
             status_code=500,
-            detail="Failed to parse CDM file. Ensure it follows the CCSDS JSON schema.",
+            detail=f"CDM processing failed: {e}",
         )
     finally:
         # Guaranteed cleanup regardless of where an exception occurred
