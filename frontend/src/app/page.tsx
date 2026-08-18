@@ -10,57 +10,12 @@ import CustomCursor from '../components/CustomCursor';
 // Dynamically import Globe to avoid SSR issues with Three.js
 const Globe = dynamic(() => import('../components/Globe'), { ssr: false });
 
-const PixelAstronaut = () => {
-  // 0 = transparent, 1 = helmet (red-400), 2 = visor (red-900)
-  const pixels = [
-    0,0,0,1,1,1,1,0,0,0,
-    0,0,1,1,1,1,1,1,0,0,
-    0,1,1,2,2,2,2,1,1,0,
-    1,1,2,2,2,2,2,2,1,1,
-    1,1,2,2,0,0,2,2,1,1,
-    1,1,2,2,2,2,2,2,1,1,
-    0,1,1,2,2,2,2,1,1,0,
-    0,0,1,1,1,1,1,1,0,0,
-    0,0,0,1,1,1,1,0,0,0,
-    0,0,1,1,0,0,1,1,0,0
-  ];
-  return (
-    <div className="grid grid-cols-10 gap-[1px] w-12 h-12 mb-4 opacity-80">
-      {pixels.map((p, i) => (
-        <div key={i} className={p === 1 ? 'bg-red-400' : p === 2 ? 'bg-red-950' : p === 0 && i > 40 && i < 50 ? 'bg-red-200' : 'bg-transparent'} />
-      ))}
-    </div>
-  );
-};
-
-const FILTERS = [
-  { id: 'ALL', label: 'All Satellites' },
-  { id: 'STATION', label: 'Space Stations' },
-  { id: 'STARLINK', label: 'Starlink' },
-  { id: 'COMM', label: 'Communications' },
-  { id: 'NAV', label: 'Navigation' },
-  { id: 'SCIENCE', label: 'Science / Earth Obs' },
-  { id: 'MILITARY', label: 'Military / Defense' },
-  { id: 'DEBRIS', label: 'Debris / Rockets' },
-  { id: 'OTHER', label: 'Unclassified / Other' }
-];
-
-export const getCategory = (name: string) => {
-  const n = name.toUpperCase();
-  if (n.includes("ISS") || n.includes("ZARYA") || n.includes("TIANGONG") || n.includes("CSS")) return "STATION";
-  if (n.includes("STARLINK")) return "STARLINK";
-  if (n.includes("ONEWEB") || n.includes("IRIDIUM") || n.includes("GLOBALSTAR") || n.includes("INTELSAT") || n.includes("SES") || n.includes("EUTELSAT") || n.includes("TDRS") || n.includes("O3B") || n.includes("VIASAT") || n.includes("SIRIUS")) return "COMM";
-  if (n.includes("NAVSTAR") || n.includes("GLONASS") || n.includes("GALILEO") || n.includes("BEIDOU") || n.includes("GPS") || n.includes("QZS")) return "NAV";
-  if (n.includes("NOAA") || n.includes("GOES") || n.includes("METEOR") || n.includes("TERRA") || n.includes("AQUA") || n.includes("HUBBLE") || n.includes("JWST") || n.includes("SENTINEL") || n.includes("LANDSAT") || n.includes("CHANDRA") || n.includes("SUOMI")) return "SCIENCE";
-  if (n.includes("USA") || n.includes("COSMOS") || n.includes("KOSMOS") || n.includes("YAOGAN") || n.includes("NOSS") || n.includes("DSP") || n.includes("SBIRS") || n.includes("WGS")) return "MILITARY";
-  if (n.includes(" DEB") || n.includes(" R/B") || n.includes("ROCKET") || n.includes("AKM") || n.includes("PKM") || n.includes("BREEZE") || n.includes("FREGAT") || n.includes("DEBRIS") || n.includes("CZ-")) return "DEBRIS";
-  return "OTHER";
-};
-
-export const formatProbability = (pc: number) => {
-  if (pc === 0 || pc < 1e-8) return "NEGLIGIBLE";
-  return `1 in ${Math.round(1 / pc).toLocaleString('en-US')}`;
-};
+import { PixelAstronaut } from '../components/ui/PixelAstronaut';
+import { MissionControlPanel } from '../components/ui/MissionControlPanel';
+import { AnalysisOverlay } from '../components/ui/AnalysisOverlay';
+import { SidebarPanel } from '../components/ui/SidebarPanel';
+import { AlertHUD } from '../components/ui/AlertHUD';
+import { FILTERS, getCategory, formatProbability } from '../lib/utils';
 
 export default function Home() {
   const [tleData, setTleData] = useState<string[]>([]);
@@ -354,118 +309,14 @@ export default function Home() {
         />}
       </div>
 
-      <div
-        className={`fixed inset-0 z-[100] flex items-center justify-center transition-all duration-700 ${analysisState !== 'idle' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{
-          background: 'rgba(0, 0, 0, 0.5)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)'
-        }}
-      >
-        <div className={`relative flex flex-col items-center justify-center p-6 md:p-12 rounded-[2.5rem] w-11/12 max-w-[550px] md:min-w-[550px] transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${analysisState !== 'idle' ? 'scale-100 translate-y-0' : 'scale-90 translate-y-12'}`}
-             style={{
-               background: 'rgba(10, 10, 10, 0.85)',
-               border: '1px solid rgba(255,255,255,0.08)',
-               boxShadow: '0 32px 64px -16px rgba(0,0,0,0.8), inset 0 0 32px rgba(255,255,255,0.02)'
-             }}>
-
-          {analysisState === 'computing' && (
-            <div className="flex flex-col items-center">
-              <div className="relative w-16 h-16 flex items-center justify-center mb-8">
-                <div className="absolute inset-0 border-t-2 border-white/20 rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
-                <div className="absolute inset-2 border-r-2 border-white rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-                <Target className="w-5 h-5 text-white animate-pulse" />
-              </div>
-              <h2 className="text-xl font-bold tracking-[0.2em] uppercase text-white mb-2" style={{ fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }}>Quantifying Risk</h2>
-              <div className="flex flex-col items-center gap-1 mt-4">
-                <p className="text-[#737373] font-mono text-[10px] uppercase tracking-widest animate-pulse">Propagating State Transition Matrices...</p>
-                <p className="text-[#525252] font-mono text-[10px] uppercase tracking-widest">Running Monte Carlo Simulations...</p>
-              </div>
-            </div>
-          )}
-
-          {analysisState === 'complete' && analysisResult && (
-            <div className="flex flex-col w-full text-center">
-              <button className="absolute top-6 right-6 text-[#737373] hover:text-white transition-colors p-2 cursor-pointer" onClick={() => setAnalysisState('idle')}>
-                <X className="w-6 h-6" />
-              </button>
-
-              <h2 className="text-3xl font-bold tracking-tight text-white uppercase mb-8" style={{ fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }}>
-                Conjunction Analysis
-              </h2>
-
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)]" style={{ background: 'rgba(0,0,0,0.4)' }}>
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#a3a3a3] font-semibold mb-3">Probability of Collision</span>
-                  <div className="flex flex-col items-center">
-                    <span className={`text-5xl font-mono font-bold tracking-tighter ${
-                      analysisResult.warning_level === 'RED' ? 'text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]' :
-                      'text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-                    }`}>
-                      {formatProbability(analysisResult.pc)}
-                    </span>
-                    <span className="text-[#a3a3a3] font-mono text-[11px] uppercase tracking-widest mt-2">
-                      {(analysisResult.pc * 100).toPrecision(3)}% Chance
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col items-center justify-center p-6 rounded-2xl border border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)]" style={{ background: 'rgba(0,0,0,0.4)' }}>
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-[#a3a3a3] font-semibold mb-2">Miss Distance</span>
-                  <span className="text-4xl font-mono font-bold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                    {analysisResult.miss_distance_km.toFixed(1)} <span className="text-sm text-[#737373]">KM</span>
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center p-5 rounded-xl border border-white/10 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)] mb-6" style={{ background: 'rgba(0,0,0,0.4)' }}>
-                <div className="flex flex-col items-start">
-                  <span className="text-[9px] uppercase tracking-[0.2em] text-[#737373] font-semibold mb-1">Time of Closest Approach</span>
-                  <span className="text-sm font-mono text-white tracking-widest">{new Date(analysisResult.tca).toUTCString()}</span>
-                </div>
-                <div className="w-[1px] h-8 bg-white/10"></div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[9px] uppercase tracking-[0.2em] text-[#737373] font-semibold mb-1">Relative Velocity</span>
-                  <span className="text-sm font-mono text-white tracking-widest">{analysisResult.rel_velocity_km_s.toFixed(2)} KM/S</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex w-full mt-2">
-                <button
-                  onClick={handleAvoidManeuver}
-                  disabled={avoidState === 'computing' || avoidState === 'complete'}
-                  className={`w-full flex flex-col items-center justify-center p-5 rounded-2xl border transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${avoidState === 'complete' ? 'bg-white/10 border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-transparent border-white/20 hover:bg-white/10'}`}
-                >
-                  <span className="text-[11px] uppercase tracking-widest font-bold mb-1 text-white">
-                    {avoidState === 'computing' ? 'Optimizing...' : avoidState === 'complete' ? 'Maneuver Found' : 'Optimize Avoidance'}
-                  </span>
-                  {avoidState === 'idle' && (
-                    <span className="text-[#a3a3a3] font-mono text-[10px]">Calculate Delta-V Burn</span>
-                  )}
-                </button>
-              </div>
-
-              {avoidResult && (
-                <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/30 flex flex-col text-left">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-white font-semibold mb-2 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
-                    Maneuver Telemetry (T-12h)
-                  </span>
-                  <div className="grid grid-cols-3 gap-2 font-mono text-[11px] text-white">
-                    <div className="bg-black/40 p-2 rounded border border-white/5">dX: {(avoidResult.dv[0] * 1000).toFixed(3)} m/s</div>
-                    <div className="bg-black/40 p-2 rounded border border-white/5">dY: {(avoidResult.dv[1] * 1000).toFixed(3)} m/s</div>
-                    <div className="bg-black/40 p-2 rounded border border-white/5">dZ: {(avoidResult.dv[2] * 1000).toFixed(3)} m/s</div>
-                  </div>
-                  <div className="mt-3 flex justify-between items-center text-[10px]">
-                    <span className="text-[#737373] uppercase tracking-widest">Expected Final Risk:</span>
-                    <span className="text-white font-mono">{formatProbability(avoidResult.pc)}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      <AnalysisOverlay
+        analysisState={analysisState}
+        analysisResult={analysisResult}
+        avoidState={avoidState}
+        avoidResult={avoidResult}
+        onClose={() => setAnalysisState('idle')}
+        onOptimizeAvoidance={handleAvoidManeuver}
+      />
 
       {/* Top Left Header (Button + Logo) */}
       <div
@@ -492,166 +343,61 @@ export default function Home() {
       </div>
 
       {/* Retractable Sidebar */}
-      <div
-        className={`absolute top-20 md:top-28 left-4 right-4 md:right-auto md:left-8 z-40 flex flex-col gap-4 p-4 rounded-2xl md:min-w-[300px] max-h-[75vh] overflow-y-auto transition-all duration-500 origin-top-left ${isSidebarOpen ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
-        style={{
-          background: 'rgba(10, 10, 10, 0.65)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          transform: 'translateZ(0)',
-          willChange: 'opacity, transform',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.2)'
+      <SidebarPanel
+        isOpen={isSidebarOpen}
+        view={sidebarView}
+        setView={setSidebarView}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        searchResults={searchResults}
+        filter={filter}
+        setFilter={setFilter}
+        filtersList={FILTERS}
+        mockConjunctions={mockConjunctions}
+        onRefreshConjunctions={generateRandomConjunctions}
+        isTimeScrubberOpen={isTimeScrubberOpen}
+        setIsTimeScrubberOpen={setIsTimeScrubberOpen}
+        onSelectCatalogItem={(res) => {
+           try {
+             let satData;
+             if (res.id === '43205') {
+               const satrec = satellite.twoline2satrec(res.tle1, res.tle2);
+               satData = { id: res.id, name: res.name, satrec, category: 'STARMAN', color: [1.0, 0.0, 0.0] };
+             } else {
+               const satrec = satellite.twoline2satrec(res.tle1, res.tle2);
+               satData = { id: res.id, name: res.name, satrec, category: getCategory(res.name), color: [1,1,1] };
+             }
+             setFilter('ALL');
+             setPrimaryTarget(null);
+             setSecondaryTarget(null);
+             setShowMissionControl(false);
+             setActiveSat(satData as any);
+           } catch {}
         }}
-      >
-        <nav className="flex flex-col items-start gap-4 w-full">
-            <div className="flex gap-6 w-full border-b border-white/10 mb-4">
-              <button
-                onClick={() => setSidebarView('catalog')}
-                className={`transition-all duration-300 text-xs font-semibold tracking-[0.1em] uppercase relative pb-3 border-b-2 ${sidebarView === 'catalog' ? 'text-white border-white' : 'text-[#a3a3a3] border-transparent hover:text-white'}`}
-              >
-                Catalog
-              </button>
-              <button
-                onClick={() => setSidebarView('analysis')}
-                className={`transition-all duration-300 text-xs font-semibold tracking-[0.1em] uppercase relative pb-3 border-b-2 ${sidebarView === 'analysis' ? 'text-white border-white' : 'text-[#a3a3a3] border-transparent hover:text-white'}`}
-              >
-                Analysis
-              </button>
-            </div>
+        onSelectConjunction={(res) => {
+          let pName = `SAT-${res.primary_id}`, sName = `SAT-${res.secondary_id}`;
+          let pSatrec = {} as any, sSatrec = {} as any;
 
-            {sidebarView === 'catalog' && (
-              <div className="flex flex-col gap-4 w-full">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 text-[#737373]" />
-                  <input
-                    type="text"
-                    placeholder="Search Catalog..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg py-2 pl-8 pr-3 text-[10px] text-white placeholder-[#a3a3a3] focus:outline-none focus:border-white/30 transition-colors"
-                  />
-                </div>
+          for (let j = 0; j < tleData.length; j++) {
+            if (tleData[j].startsWith('1 ') && tleData[j].substring(2, 7).trim() === res.primary_id) {
+              pName = tleData[j-1];
+              pSatrec = satellite.twoline2satrec(tleData[j], tleData[j+1]);
+            }
+            if (tleData[j].startsWith('1 ') && tleData[j].substring(2, 7).trim() === res.secondary_id) {
+              sName = tleData[j-1];
+              sSatrec = satellite.twoline2satrec(tleData[j], tleData[j+1]);
+            }
+          }
 
-                {searchQuery.length > 1 && searchResults.length > 0 && (
-                  <div className="flex flex-col gap-1 max-h-[140px] overflow-y-auto pr-1">
-                    {searchResults.map(res => (
-                      <div key={res.id} onClick={() => {
-                         try {
-                           let satData;
-                           if (res.id === '43205') {
-                             const satrec = satellite.twoline2satrec(res.tle1, res.tle2);
-                             satData = { id: res.id, name: res.name, satrec, category: 'STARMAN', color: [1.0, 0.0, 0.0] };
-                           } else {
-                             const satrec = satellite.twoline2satrec(res.tle1, res.tle2);
-                             satData = { id: res.id, name: res.name, satrec, category: getCategory(res.name), color: [1,1,1] };
-                           }
-                           setFilter('ALL'); // Prevent camera jumping to invisible satellite
-                           setPrimaryTarget(null);
-                           setSecondaryTarget(null);
-                           setShowMissionControl(false);
-                           setActiveSat(satData as any);
-                         } catch {}
-                      }} className="text-[10px] text-[#a3a3a3] hover:text-white cursor-pointer py-1.5 px-2 hover:bg-white/10 rounded border border-transparent hover:border-white/5 transition-all flex justify-between items-center group">
-                         <span className="truncate max-w-[120px] font-medium group-hover:text-white transition-colors">{res.name}</span>
-                         <span className="font-mono text-[9px] text-[#525252] group-hover:text-[#a3a3a3] transition-colors">{res.id}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          const mockPrimary = { id: res.primary_id, name: pName, satrec: pSatrec, category: getCategory(pName), color: [1,1,1] };
+          const mockSecondary = { id: res.secondary_id, name: sName, satrec: sSatrec, category: getCategory(sName), color: [1,1,1] };
 
-                {(searchQuery.length > 1 && searchResults.length > 0) && <div className="w-full h-[1px] bg-white/5"></div>}
-
-                <span className="text-[10px] uppercase tracking-widest text-[#525252] font-semibold mb-1">Filters</span>
-                {FILTERS.map(f => (
-                  <button
-                    key={f.id}
-                    onClick={() => setFilter(f.id)}
-                    className={`text-[11px] font-medium tracking-[0.1em] uppercase transition-all duration-300 flex items-center gap-3 ${filter === f.id ? 'text-white' : 'text-[#737373] hover:text-[#a3a3a3]'}`}
-                  >
-                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${filter === f.id ? 'bg-white scale-100' : 'bg-transparent scale-0'}`}></div>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {sidebarView === 'analysis' && (
-              <div className="flex flex-col gap-3 w-full">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] uppercase tracking-widest text-[#525252] font-semibold">High-Risk Conjunctions</span>
-                  <button onClick={() => generateRandomConjunctions()} className="text-[9px] uppercase tracking-widest text-[#a3a3a3] hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-2 py-1 rounded">
-                    Refresh
-                  </button>
-                </div>
-
-                {mockConjunctions.map((res, i) => (
-                  <div key={i} onClick={() => {
-                    let pName = `SAT-${res.primary_id}`, sName = `SAT-${res.secondary_id}`;
-                    let pSatrec = {} as any, sSatrec = {} as any;
-
-                    for (let j = 0; j < tleData.length; j++) {
-                      if (tleData[j].startsWith('1 ') && tleData[j].substring(2, 7).trim() === res.primary_id) {
-                        pName = tleData[j-1];
-                        pSatrec = satellite.twoline2satrec(tleData[j], tleData[j+1]);
-                      }
-                      if (tleData[j].startsWith('1 ') && tleData[j].substring(2, 7).trim() === res.secondary_id) {
-                        sName = tleData[j-1];
-                        sSatrec = satellite.twoline2satrec(tleData[j], tleData[j+1]);
-                      }
-                    }
-
-                    const mockPrimary = { id: res.primary_id, name: pName, satrec: pSatrec, category: getCategory(pName), color: [1,1,1] };
-                    const mockSecondary = { id: res.secondary_id, name: sName, satrec: sSatrec, category: getCategory(sName), color: [1,1,1] };
-
-                    setPrimaryTarget(mockPrimary as any);
-                    setSecondaryTarget(mockSecondary as any);
-                    setActiveSat(mockPrimary as any);
-                    setShowMissionControl(true);
-                  }} className="flex flex-col p-3 rounded-xl bg-white/5 border border-white/5 cursor-pointer hover:bg-white/10 transition-colors group">
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="flex gap-2 items-center">
-                         <span className="text-white font-mono text-xs group-hover:text-[#00ffff] transition-colors">{res.primary_id}</span>
-                         <span className="text-[#525252] text-[10px]">vs</span>
-                         <span className="text-[#a3a3a3] font-mono text-xs">{res.secondary_id}</span>
-                      </div>
-                      <div className={`w-2 h-2 rounded-full ${res.warning_level === 'RED' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]' : res.warning_level === 'YELLOW' ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]' : 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]'}`}></div>
-                    </div>
-                    <div className="flex justify-between items-end">
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-[#737373] uppercase tracking-widest">Probability</span>
-                        <span className={`font-mono text-xs ${
-                          res.warning_level === 'RED' ? 'text-red-500' :
-                          'text-white'
-                        }`}>
-                          {formatProbability(res.pc)}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end">
-                         <span className="text-[8px] text-[#737373] uppercase tracking-widest">Miss</span>
-                         <span className="font-mono text-xs text-white">{res.miss_distance_km.toFixed(1)} KM</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Sidebar Footer Controls */}
-            <div className="w-full mt-4 pt-4 border-t border-white/10">
-              <button
-                onClick={() => setIsTimeScrubberOpen(!isTimeScrubberOpen)}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-300 border ${isTimeScrubberOpen ? 'bg-white/10 border-white/20 text-white' : 'bg-transparent border-transparent text-[#a3a3a3] hover:text-white hover:bg-white/5'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4" />
-                  <span className="text-[10px] tracking-widest uppercase font-mono">Time Machine</span>
-                </div>
-                <div className={`w-2 h-2 rounded-full transition-colors ${isTimeScrubberOpen ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.6)]' : 'bg-transparent'}`}></div>
-              </button>
-            </div>
-        </nav>
-      </div>
+          setPrimaryTarget(mockPrimary as any);
+          setSecondaryTarget(mockSecondary as any);
+          setActiveSat(mockPrimary as any);
+          setShowMissionControl(true);
+        }}
+      />
 
       <button
         className="absolute top-4 right-4 md:top-8 md:right-8 z-50 flex items-center gap-2 lg:gap-4 px-3 lg:px-4 py-2 lg:py-3 rounded-2xl cursor-pointer group"
@@ -684,51 +430,17 @@ export default function Home() {
       </button>
 
       {/* Minimalist Mission Control (Right) */}
-      <div
-        className={`absolute top-20 lg:top-28 right-4 left-4 md:left-auto md:right-8 w-auto md:w-80 z-40 space-y-4 flex flex-col gap-4 p-5 rounded-3xl max-h-[calc(100dvh-6rem)] overflow-y-auto transition-all duration-500 origin-top-right ${showMissionControl ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none'}`}
-        style={{
-          background: 'rgba(10, 10, 10, 0.65)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          transform: 'translateZ(0)',
-          willChange: 'opacity, transform',
-          border: '1px solid rgba(255,255,255,0.08)',
-          boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.2)'
-        }}
-      >
-        <div className="flex justify-between items-center">
-            <h3 className="text-white text-xs font-semibold uppercase tracking-[0.15em]">System Link</h3>
-            <button onClick={() => { setShowMissionControl(false); setActiveSat(null); setPrimaryTarget(null); setSecondaryTarget(null); setEscapeTrajectory(null); }} className="text-[#737373] hover:text-white p-1 rounded-full transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="w-8 h-[1px] bg-white/10"></div>
-
-          {/* Target Data */}
-          <div className="space-y-4">
-            <div>
-              <p className="text-[9px] uppercase tracking-[0.2em] text-[#737373] mb-1 font-semibold">Primary Target</p>
-              <p className="text-sm text-white font-mono truncate block max-w-[260px]">{primaryTarget ? primaryTarget.name : 'AWAITING SELECTION'}</p>
-            </div>
-            <div>
-              <p className="text-[9px] uppercase tracking-[0.2em] text-[#737373] mb-1 font-semibold">Secondary Target</p>
-              <p className="text-sm text-white font-mono truncate block max-w-[260px]">{secondaryTarget ? secondaryTarget.name : 'AWAITING SELECTION'}</p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleRunAnalysis}
-            disabled={!primaryTarget || !secondaryTarget}
-            className={`w-full font-bold text-[10px] py-4 rounded-xl uppercase tracking-[0.15em] transition-all duration-300 mt-2 ${
-              primaryTarget && secondaryTarget
-                ? 'bg-white text-black hover:bg-gray-200 shadow-[0_0_20px_rgba(255,255,255,0.3)]'
-                : 'bg-transparent text-[#737373] border border-white/10 cursor-not-allowed'
-            }`}
-          >
-            Execute Analysis
-          </button>
-      </div>
+      <MissionControlPanel
+        showMissionControl={showMissionControl}
+        setShowMissionControl={setShowMissionControl}
+        setActiveSat={setActiveSat}
+        primaryTarget={primaryTarget}
+        setPrimaryTarget={setPrimaryTarget}
+        secondaryTarget={secondaryTarget}
+        setSecondaryTarget={setSecondaryTarget}
+        setEscapeTrajectory={setEscapeTrajectory}
+        handleRunAnalysis={handleRunAnalysis}
+      />
 
       {/* Sleek Satellite Info HUD (Bottom Right) */}
       <div
@@ -743,91 +455,16 @@ export default function Home() {
           boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.2)'
         }}
       >
-        {activeSat && (
-          <>
-                <div className="flex justify-between items-start w-full">
-                  <div className="flex flex-col items-start w-full">
-                    <div className="flex items-center gap-3 mb-1 w-full">
-                      <h2 style={{ fontFamily: 'var(--font-display, "Space Grotesk")' }} className="text-2xl font-bold tracking-tight uppercase text-left truncate max-w-[240px] text-white">
-                        {activeSat.name}
-                      </h2>
-                  <div className="w-2 h-2 rounded-full animate-pulse flex-shrink-0 bg-white"></div>
-                </div>
-                <p className="text-[11px] font-mono tracking-widest uppercase text-[#a3a3a3]">ID: {activeSat.id}</p>
-              </div>
-              <button
-                onClick={() => setActiveSat(null)}
-                className="text-[#737373] hover:text-white p-1 rounded-full transition-colors mt-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="w-8 h-[1px] bg-white/10"></div>
-
-            {activeSat.id === '43205' && (
-               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-2 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-2 opacity-20">
-                    <AlertTriangle className="w-12 h-12 text-red-500" />
-                  </div>
-                  <PixelAstronaut />
-                  <h3 className="text-red-400 font-bold text-[10px] tracking-widest uppercase mb-3">Warning: Off-Nominal Trajectory</h3>
-                  <p className="text-red-300 font-mono text-[10px] leading-relaxed">
-                    VEHICLE: TESLA ROADSTER<br/>
-                    PAYLOAD: "STARMAN"<br/>
-                    ORBIT: LOW EARTH ORBIT<br/><br/>
-                    "DON'T PANIC."
-                  </p>
-               </div>
-            )}
-
-            <div className="grid grid-cols-3 gap-2 md:gap-4 w-full p-4 border rounded-xl bg-white/5 border-white/5">
-              <div className="flex flex-col">
-                <p className="text-[9px] uppercase tracking-[0.2em] mb-1 font-semibold text-[#737373]">Category</p>
-                <p className="text-xs font-medium uppercase tracking-widest text-white">{activeSat.category}</p>
-              </div>
-              <div className="flex flex-col">
-                <p className="text-[9px] uppercase tracking-[0.2em] mb-1 font-semibold text-[#737373]">Altitude</p>
-                <p className="text-xs font-mono tracking-wider text-white">{activeSatDetails.alt} <span className="text-[8px] text-[#737373]">KM</span></p>
-              </div>
-              <div className="flex flex-col">
-                <p className="text-[9px] uppercase tracking-[0.2em] mb-1 font-semibold text-[#737373]">Velocity</p>
-                <p className="text-xs font-mono tracking-wider text-white">{activeSatDetails.vel} <span className="text-[8px] text-[#737373]">KM/S</span></p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 md:gap-3 w-full">
-                <button
-                  onClick={() => {
-                    setPrimaryTarget(activeSat);
-                    setShowMissionControl(true);
-                  }}
-                  disabled={primaryTarget?.id === activeSat.id}
-                  className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
-                    primaryTarget?.id === activeSat.id
-                      ? 'bg-white/10 border-[#00ff88] text-white shadow-[0_0_15px_rgba(0,255,136,0.2)] cursor-default'
-                      : 'bg-transparent border-white/20 text-white hover:bg-white/10'
-                  }`}
-                >
-                  {primaryTarget?.id === activeSat.id ? 'Primary Set' : 'Set Primary'}
-                </button>
-                <button
-                  onClick={() => {
-                    setSecondaryTarget(activeSat);
-                    setShowMissionControl(true);
-                  }}
-                  disabled={secondaryTarget?.id === activeSat.id}
-                  className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
-                    secondaryTarget?.id === activeSat.id
-                      ? 'bg-white/10 border-[#00ffff] text-white shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-default'
-                      : 'bg-transparent border-white/20 text-white hover:bg-white/10'
-                  }`}
-                >
-                  {secondaryTarget?.id === activeSat.id ? 'Secondary Set' : 'Set Secondary'}
-                </button>
-              </div>
-          </>
-        )}
+        <AlertHUD
+          activeSat={activeSat}
+          activeSatDetails={activeSatDetails}
+          setActiveSat={setActiveSat}
+          primaryTarget={primaryTarget}
+          setPrimaryTarget={setPrimaryTarget}
+          secondaryTarget={secondaryTarget}
+          setSecondaryTarget={setSecondaryTarget}
+          setShowMissionControl={setShowMissionControl}
+        />
       </div>
 
       {/* Time Scrubber */}

@@ -227,4 +227,8 @@ def cmd_slash_help(ctx: click.Context) -> None:
 
 
 if __name__ == "__main__":
-    cli(auto_envvar_prefix="OURE")
+    import sys
+
+    from oure.cli.main import cli as real_cli
+
+    sys.exit(real_cli(auto_envvar_prefix="OURE"))

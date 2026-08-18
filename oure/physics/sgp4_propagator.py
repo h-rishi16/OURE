@@ -16,7 +16,11 @@ from oure.core.models import StateVector, TLERecord
 
 from .base import BasePropagator
 from .frames import rv2coe_vectorized
-from .kepler import solve_kepler_vectorized
+
+try:
+    from .ckepler import solve_kepler_vectorized
+except ImportError:
+    from .kepler import solve_kepler_vectorized
 
 
 class SGP4Propagator(BasePropagator):

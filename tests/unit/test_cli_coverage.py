@@ -266,7 +266,7 @@ def test_cli_fleet(mock_tle_state, mock_ctx_class, runner, sample_tle, tmp_path)
 
 
 @patch("oure.cli.main.OUREContext")
-@patch("oure.cli.cmd_monitor.analyze")
+@patch("oure.cli.cmd_analyze.analyze")
 @patch("time.sleep", return_value=None)
 def test_cli_monitor(mock_sleep, mock_analyze, mock_ctx_class, runner, tmp_path):
     mock_ctx = MagicMock()

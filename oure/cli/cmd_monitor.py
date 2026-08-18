@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 
 import click
 
-from .cmd_analyze import analyze
 from .main import cli
 from .utils import UI, console
 
@@ -70,6 +69,8 @@ def monitor(
             run_count += 1
             timestamp = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
             console.print(f"[bold cyan][{timestamp}] Run #{run_count}[/bold cyan]")
+
+            from .cmd_analyze import analyze
 
             results = ctx.invoke(
                 analyze,

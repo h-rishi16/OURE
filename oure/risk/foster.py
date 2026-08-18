@@ -85,26 +85,52 @@ class FosterPcCalculator:
         norm_factor = 1.0 / (2 * pi * sqrt(det_C))
         R_sq = self.R**2
 
-        def integrand(zeta: float, xi: float) -> float:
-            if xi**2 + zeta**2 > R_sq:
-                return 0.0
-            u = np.array([xi - b[0], zeta - b[1]])
-            return norm_factor * exp(-0.5 * u @ C_inv @ u)
-
         sigma_x = sqrt(C[0, 0])
         sigma_z = sqrt(C[1, 1])
         xi_lo = -self.integration_sigma * sigma_x
         xi_hi = self.integration_sigma * sigma_x
 
-        result, _ = dblquad(
-            integrand,
-            xi_lo,
-            xi_hi,
-            lambda xi: -self.integration_sigma * sigma_z,
-            lambda xi: self.integration_sigma * sigma_z,
-            epsabs=1e-12,
-            epsrel=1e-8,
-        )
+        try:
+            from .cfoster import create_low_level_callable
+
+            llc_integrand = create_low_level_callable(
+                R_sq,
+                b[0],
+                b[1],
+                C_inv[0, 0],
+                C_inv[0, 1],
+                C_inv[1, 0],
+                C_inv[1, 1],
+                norm_factor,
+            )
+
+            result, _ = dblquad(
+                llc_integrand,
+                xi_lo,
+                xi_hi,
+                lambda xi: -self.integration_sigma * sigma_z,
+                lambda xi: self.integration_sigma * sigma_z,
+                epsabs=1e-12,
+                epsrel=1e-8,
+            )
+        except ImportError:
+            # Fallback to pure Python if C-extension is not compiled
+            def python_integrand(zeta: float, xi: float) -> float:
+                if xi**2 + zeta**2 > R_sq:
+                    return 0.0
+                u = np.array([xi - b[0], zeta - b[1]])
+                return norm_factor * exp(-0.5 * u @ C_inv @ u)
+
+            result, _ = dblquad(
+                python_integrand,
+                xi_lo,
+                xi_hi,
+                lambda xi: -self.integration_sigma * sigma_z,
+                lambda xi: self.integration_sigma * sigma_z,
+                epsabs=1e-12,
+                epsrel=1e-8,
+            )
+
         return float(np.clip(result, 0.0, 1.0))
 
     def _foster_series(self, b: np.ndarray, C: np.ndarray) -> float:
