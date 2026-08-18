@@ -20,6 +20,9 @@ RUN pip install --no-cache-dir .[web]
 # Copy the rest of the code
 COPY . .
 
+# Build Cython extensions
+RUN python setup_cython.py build_ext --inplace
+
 # Expose port for API and Dashboard (8000)
 EXPOSE 8000
 
