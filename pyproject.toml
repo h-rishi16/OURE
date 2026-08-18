@@ -65,6 +65,7 @@ dependencies = [
     "redis>=5.0",
     "prometheus-fastapi-instrumentator>=6.1.0",
     "Cython>=3.0",
+    "setuptools>=68.0",
 ]
 
 [project.scripts]
