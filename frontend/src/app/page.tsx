@@ -314,7 +314,16 @@ export default function Home() {
         analysisResult={analysisResult}
         avoidState={avoidState}
         avoidResult={avoidResult}
-        onClose={() => setAnalysisState('idle')}
+        onClose={() => {
+          setAnalysisState('idle');
+          setAvoidState('idle');
+          setAvoidResult(null);
+          setEscapeTrajectory(null);
+          setActiveSat(null);
+          setPrimaryTarget(null);
+          setSecondaryTarget(null);
+          setShowMissionControl(false);
+        }}
         onOptimizeAvoidance={handleAvoidManeuver}
       />
 
@@ -354,7 +363,7 @@ export default function Home() {
         setFilter={setFilter}
         filtersList={FILTERS}
         mockConjunctions={mockConjunctions}
-        onRefreshConjunctions={generateRandomConjunctions}
+        onRefreshConjunctions={() => generateRandomConjunctions()}
         isTimeScrubberOpen={isTimeScrubberOpen}
         setIsTimeScrubberOpen={setIsTimeScrubberOpen}
         onSelectCatalogItem={(res) => {

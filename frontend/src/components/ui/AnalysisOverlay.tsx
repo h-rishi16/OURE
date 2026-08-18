@@ -56,7 +56,7 @@ export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({
               <X className="w-6 h-6" />
             </button>
 
-            <h2 className="text-3xl font-bold tracking-tight text-white uppercase mb-8" style={{ fontFamily: 'var(--font-space-grotesk, "Space Grotesk")' }}>
+            <h2 className="text-3xl font-bold tracking-tight text-white uppercase mb-8 font-display">
               Conjunction Analysis
             </h2>
 
@@ -64,7 +64,7 @@ export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({
               <div>
                 <span className="text-xs uppercase tracking-widest text-neutral-500 font-medium mb-1 block">Probability of Collision</span>
                 <div className="flex items-baseline gap-4">
-                  <span className={`text-6xl font-light tracking-tight ${
+                  <span className={`text-6xl font-light font-display tracking-tight ${
                     analysisResult.warning_level === 'RED' ? 'text-red-500' : 'text-white'
                   }`}>
                     {formatProbability(analysisResult.pc)}
@@ -78,14 +78,14 @@ export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({
               <div className="flex flex-row items-center justify-between border-t border-white/10 pt-6">
                 <div>
                   <span className="text-xs uppercase tracking-widest text-neutral-500 font-medium mb-1 block">Miss Distance</span>
-                  <span className="text-2xl font-light text-white tracking-tight">
-                    {analysisResult.miss_distance_km.toFixed(1)} <span className="text-sm text-neutral-500">km</span>
+                  <span className="text-2xl font-light font-display text-white tracking-tight">
+                    {analysisResult.miss_distance_km.toFixed(1)} <span className="text-sm font-sans text-neutral-500">km</span>
                   </span>
                 </div>
                 <div>
                   <span className="text-xs uppercase tracking-widest text-neutral-500 font-medium mb-1 block">Relative Velocity</span>
-                  <span className="text-2xl font-light text-white tracking-tight">
-                    {analysisResult.rel_velocity_km_s.toFixed(2)} <span className="text-sm text-neutral-500">km/s</span>
+                  <span className="text-2xl font-light font-display text-white tracking-tight">
+                    {analysisResult.rel_velocity_km_s.toFixed(2)} <span className="text-sm font-sans text-neutral-500">km/s</span>
                   </span>
                 </div>
               </div>

@@ -187,7 +187,7 @@ function Satellites({
   }, [tleData]);
 
   const [positions, colors, velocities, updateTimes] = useMemo(() => {
-    const pos = new Float32Array(satellites.length * 3);
+    const pos = new Float32Array(satellites.length * 3).fill(9999999);
     const col = new Float32Array(satellites.length * 3);
     const vel = new Float32Array(satellites.length * 3);
     const upT = new Float32Array(satellites.length);
@@ -200,35 +200,35 @@ function Satellites({
   }, [satellites]);
 
   const isZooming = useRef(false);
-  const zoomTimeout = useRef<any>(null);
-  const isZoomingOut = useRef(true);
-  const zoomOutTimeout = useRef<any>(null);
+  const zoomTimeout = useRef<any>(null); // Kept to avoid breaking any stray references, but setting it to unused state
+  const isBootZooming = useRef(true);
   const prevFocusRef = useRef<string | null | undefined>(null);
 
   React.useEffect(() => {
     const bootTimer = setTimeout(() => {
-      isZoomingOut.current = false;
+      isBootZooming.current = false;
     }, 2500);
     return () => clearTimeout(bootTimer);
   }, []);
 
   React.useEffect(() => {
-    isZooming.current = !!focusSatId;
-    if (prevFocusRef.current && !focusSatId) {
-      isZoomingOut.current = true;
-      if (zoomOutTimeout.current) clearTimeout(zoomOutTimeout.current);
-      zoomOutTimeout.current = setTimeout(() => {
-        isZoomingOut.current = false;
-      }, 1500);
-    }
-    prevFocusRef.current = focusSatId;
+    const handleInteraction = () => {
+      isBootZooming.current = false;
+      isZooming.current = false;
+    };
+    window.addEventListener('pointerdown', handleInteraction);
+    window.addEventListener('wheel', handleInteraction);
+    window.addEventListener('touchstart', handleInteraction);
+    return () => {
+      window.removeEventListener('pointerdown', handleInteraction);
+      window.removeEventListener('wheel', handleInteraction);
+      window.removeEventListener('touchstart', handleInteraction);
+    };
+  }, []);
 
-    if (zoomTimeout.current) clearTimeout(zoomTimeout.current);
-    if (focusSatId) {
-      zoomTimeout.current = setTimeout(() => {
-        isZooming.current = false;
-      }, 1500);
-    }
+  React.useEffect(() => {
+    isZooming.current = !!focusSatId;
+    prevFocusRef.current = focusSatId;
 
     if (!meshRef.current) return;
     const colorAttr = meshRef.current.geometry.attributes.color;
@@ -391,24 +391,27 @@ function Satellites({
       }
 
     } else if (!focusSatId && controlsRef?.current) {
-      const defaultTarget = new THREE.Vector3(0, 0, 0);
-      if (controlsRef.current.target && typeof controlsRef.current.target.distanceToSquared === 'function') {
-        if (controlsRef.current.target.distanceToSquared(defaultTarget) > 10000) {
-          controlsRef.current.target.lerp(defaultTarget, 0.03);
-        }
-      }
-
       if (ellipsoidRef.current) {
         ellipsoidRef.current.visible = false;
       }
 
-      if (isZoomingOut.current) {
+      if (isBootZooming.current) {
         const homePos = new THREE.Vector3(0, 5000, 25000);
+        const defaultTarget = new THREE.Vector3(0, 0, 0);
+
+        if (controlsRef.current.target && typeof controlsRef.current.target.distanceToSquared === 'function') {
+          controlsRef.current.target.lerp(defaultTarget, 0.03);
+        }
+
         state.camera.position.lerp(homePos, 0.015);
-        if (state.camera.position.distanceTo(homePos) < 500) {
-          isZoomingOut.current = false;
+
+        if (state.camera.position.distanceTo(homePos) < 1500) {
+          isBootZooming.current = false;
         }
       }
+
+      // No longer forcing a programmatic zoom-out on deselection.
+      // Letting the user maintain manual control of the camera via OrbitControls.
 
       if (state.camera.position.length() < 6400) {
          state.camera.position.setLength(6400);

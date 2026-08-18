@@ -15,7 +15,8 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['var(--font-inter)'],
-        display: ['var(--font-space-grotesk)'],
+        display: ['var(--font-display)'],
+        mono: ['var(--font-jetbrains-mono)'],
       },
       backgroundImage: {
         'silver-gradient': 'linear-gradient(to right, #ffffff, #a3a3a3)',

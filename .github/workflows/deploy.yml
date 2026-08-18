@@ -35,7 +35,7 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           source: "next-build.tar.gz"
-          target: "~/"
+          target: "/home/${{ secrets.ORACLE_USERNAME }}"
 
       - name: Execute Remote SSH Commands
         uses: appleboy/ssh-action@v1.0.3
@@ -44,7 +44,7 @@ jobs:
           username: ${{ secrets.ORACLE_USERNAME }}
           key: ${{ secrets.ORACLE_SSH_KEY }}
           script_stop: true
-          timeout: 10m
+          timeout: 30m
           script: |
             cd ~/oure || cd ~/OURE || exit 1
 
