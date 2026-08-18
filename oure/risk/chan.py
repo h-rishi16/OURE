@@ -90,6 +90,6 @@ class ChanPcCalculator:
             weight = exp(log_weight)
 
             gamma_term = gammainc(m + 1, u)
-            pc += weight * gamma_term
+            pc += float(weight * gamma_term)
 
         return float(np.clip(pc, 0.0, 1.0))
