@@ -149,9 +149,10 @@ class PairRequest(BaseModel):
 
 @app.post("/analyze/pair", response_model=RiskResponse)
 def analyze_pair_sync(req: PairRequest) -> RiskResponse:
-    from oure.cli.utils import _default_covariance, _tle_to_initial_state
     from oure.conjunction.assessor import ConjunctionAssessor
     from oure.core.config import settings
+    from oure.core.utils import default_covariance as _default_covariance
+    from oure.core.utils import tle_to_initial_state as _tle_to_initial_state
     from oure.data.noaa import NOAASolarFluxFetcher
     from oure.data.spacetrack import SpaceTrackFetcher
     from oure.physics.factory import PropagatorFactory
@@ -232,10 +233,11 @@ def simulate_sensor_tasking(req: SensorRequest) -> SensorResponse:
 
     import numpy as np
 
-    from oure.cli.utils import _default_covariance, _tle_to_initial_state
     from oure.conjunction.tca_finder import TCARefinementEngine
     from oure.core.config import settings
     from oure.core.models import ConjunctionEvent, CovarianceMatrix
+    from oure.core.utils import default_covariance as _default_covariance
+    from oure.core.utils import tle_to_initial_state as _tle_to_initial_state
     from oure.data.noaa import NOAASolarFluxFetcher
     from oure.data.spacetrack import SpaceTrackFetcher
     from oure.physics.numerical import NumericalPropagator
@@ -331,9 +333,10 @@ class AvoidResponse(BaseModel):
 def simulate_avoidance(req: AvoidRequest) -> AvoidResponse:
     from datetime import timedelta
 
-    from oure.cli.utils import _default_covariance, _tle_to_initial_state
     from oure.conjunction.tca_finder import TCARefinementEngine
     from oure.core.config import settings
+    from oure.core.utils import default_covariance as _default_covariance
+    from oure.core.utils import tle_to_initial_state as _tle_to_initial_state
     from oure.data.noaa import NOAASolarFluxFetcher
     from oure.data.spacetrack import SpaceTrackFetcher
     from oure.physics.maneuver import Maneuver, ManeuverPropagator

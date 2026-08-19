@@ -6,12 +6,9 @@ Centralized theme and components for a consistent OURE experience.
 
 import json
 import logging
-import math
-from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -77,62 +74,17 @@ class UI:
 
 
 def _tle_to_initial_state(tle: Any) -> StateVector:
-    from oure.core import constants
-    from oure.physics.kepler import solve_kepler_vectorized
+    """Backward-compatible wrapper. Use oure.core.utils.tle_to_initial_state instead."""
+    from oure.core.utils import tle_to_initial_state
 
-    n = tle.mean_motion_rev_per_day * constants.TWO_PI / constants.SECONDS_PER_DAY
-    a = (
-        (constants.MU_KM3_S2 / n**2) ** (1.0 / 3.0)
-        if n > 0
-        else constants.R_EARTH_KM + 400
-    )
-
-    e = tle.eccentricity
-    i = math.radians(tle.inclination_deg)
-    raan = math.radians(tle.raan_deg)
-    omega = math.radians(tle.arg_perigee_deg)
-    M = math.radians(tle.mean_anomaly_deg)
-
-    # Solve Kepler for E
-    E = float(solve_kepler_vectorized(np.array([M]), np.array([e]))[0])
-
-    # True anomaly
-    nu = 2 * math.atan2(
-        math.sqrt(1 + e) * math.sin(E / 2), math.sqrt(1 - e) * math.cos(E / 2)
-    )
-
-    p = a * (1 - e**2)
-    r_mag = p / (1 + e * math.cos(nu))
-
-    # Perifocal coordinates
-    r_pqw = r_mag * np.array([math.cos(nu), math.sin(nu), 0.0])
-    v_pqw = math.sqrt(constants.MU_KM3_S2 / p) * np.array(
-        [-math.sin(nu), e + math.cos(nu), 0.0]
-    )
-
-    # Rotation PQW -> ECI
-    c_O, s_O = math.cos(raan), math.sin(raan)
-    c_i, s_i = math.cos(i), math.sin(i)
-    c_w, s_w = math.cos(omega), math.sin(omega)
-
-    R = np.array(
-        [
-            [c_O * c_w - s_O * s_w * c_i, -c_O * s_w - s_O * c_w * c_i, s_O * s_i],
-            [s_O * c_w + c_O * s_w * c_i, -s_O * s_w + c_O * c_w * c_i, -c_O * s_i],
-            [s_w * s_i, c_w * s_i, c_i],
-        ]
-    )
-
-    return StateVector(r=R @ r_pqw, v=R @ v_pqw, epoch=tle.epoch, sat_id=tle.sat_id)
+    return tle_to_initial_state(tle)
 
 
 def _default_covariance(sat_id: str, sigma_km: float = 0.5) -> CovarianceMatrix:
-    logger.warning(
-        f"No covariance for {sat_id} — using default {sigma_km} km sigma. "
-        "Pc outputs may be inaccurate. Provide a CDM for calibrated results."
-    )
-    P = np.diag([sigma_km**2] * 3 + [1e-6] * 3)
-    return CovarianceMatrix(matrix=P, epoch=datetime.now(UTC), sat_id=sat_id)
+    """Backward-compatible wrapper. Use oure.core.utils.default_covariance instead."""
+    from oure.core.utils import default_covariance
+
+    return default_covariance(sat_id, sigma_km)
 
 
 def _print_results_table(results: list[RiskResult]) -> None:

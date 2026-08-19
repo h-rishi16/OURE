@@ -61,6 +61,33 @@ def third_body_gravity(
     return a_third
 
 
+def _compute_sun_hat(epoch: datetime) -> np.ndarray:
+    from datetime import UTC
+    from math import cos, sin
+
+    if epoch.tzinfo is None:
+        epoch = epoch.replace(tzinfo=UTC)
+    t_j2000 = (
+        epoch - datetime(2000, 1, 1, 12, 0, tzinfo=UTC)
+    ).total_seconds() / 86400.0
+    mean_long = (280.460 + 0.9856474 * t_j2000) % 360
+    g = (357.528 + 0.9856003 * t_j2000) % 360
+    lamb = (
+        mean_long + 1.915 * sin(np.radians(g)) + 0.020 * sin(np.radians(2 * g))
+    ) % 360
+    eps = 23.439 - 0.0000004 * t_j2000
+    r_sun = np.array(
+        [
+            cos(np.radians(lamb)),
+            sin(np.radians(lamb)) * cos(np.radians(eps)),
+            sin(np.radians(lamb)) * sin(np.radians(eps)),
+        ]
+    )
+    from typing import cast
+
+    return cast(np.ndarray, r_sun / np.linalg.norm(r_sun))
+
+
 class NumericalPropagator(BasePropagator):
     """
     High-Precision Orbit Propagator using Runge-Kutta 4(5) numerical integration.
@@ -149,18 +176,22 @@ class NumericalPropagator(BasePropagator):
         # 4. Solar Radiation Pressure (SRP)
         a_srp = np.zeros(3)
         if self.include_srp:
-            from .srp_corrector import SRPCorrector
-
-            dummy_srp = SRPCorrector(self, cr=self.cr, area_m2=1.0, mass_kg=1.0)
-            sun_hat = dummy_srp._get_sun_vector(sim_epoch)
             p_sun = 4.56e-6
-            a_srp_ms2 = -p_sun * self.cr * self.am_ratio * sun_hat
+            a_srp_ms2 = -p_sun * self.cr * self.am_ratio * self._cached_sun_hat
             a_srp = a_srp_ms2 / 1000.0
 
         # 5. Third-Body Gravity
         a_third = np.zeros(3)
         if self.use_third_body and altitude > 2000.0:
-            a_third = third_body_gravity(r, sim_epoch)
+            for gm, r_body in [
+                (4.9048695e12 / 1e9, self._cached_moon_pos),
+                (1.32712440018e20 / 1e9, self._cached_sun_pos),
+            ]:
+                r_rel = r_body - r
+                a_third += gm * (
+                    r_rel / (np.linalg.norm(r_rel) ** 3)
+                    - r_body / (np.linalg.norm(r_body) ** 3)
+                )
 
         a_tot = a_grav + a_j2 + a_drag + a_srp + a_third
         return np.concatenate([v, a_tot])
@@ -171,6 +202,34 @@ class NumericalPropagator(BasePropagator):
 
         self._base_epoch = state.epoch
         y0 = state.state_vector_6d
+
+        mid_epoch = state.epoch + timedelta(seconds=dt_seconds / 2)
+        if self.include_srp:
+            self._cached_sun_hat = _compute_sun_hat(mid_epoch)
+        if self.use_third_body:
+            import astropy.units as u
+            from astropy.coordinates import GCRS, get_body
+            from astropy.time import Time
+
+            t_mid = Time(mid_epoch)
+            moon_pos = (
+                get_body("moon", t_mid).transform_to(GCRS(obstime=t_mid)).cartesian
+            )
+            self._cached_moon_pos = np.array(
+                [
+                    moon_pos.x.to_value(u.km),
+                    moon_pos.y.to_value(u.km),
+                    moon_pos.z.to_value(u.km),
+                ]
+            )
+            sun_pos = get_body("sun", t_mid).transform_to(GCRS(obstime=t_mid)).cartesian
+            self._cached_sun_pos = np.array(
+                [
+                    sun_pos.x.to_value(u.km),
+                    sun_pos.y.to_value(u.km),
+                    sun_pos.z.to_value(u.km),
+                ]
+            )
 
         # Integrate using RK45
         sol = solve_ivp(
@@ -257,43 +316,17 @@ class NumericalPropagator(BasePropagator):
         # 4. Solar Radiation Pressure (SRP)
         a_srp = np.zeros_like(v)
         if self.include_srp:
-            from .srp_corrector import SRPCorrector
-
-            dummy_srp = SRPCorrector(self, cr=self.cr, area_m2=1.0, mass_kg=1.0)
-            sun_hat = dummy_srp._get_sun_vector(sim_epoch)
             p_sun = 4.56e-6
-            a_srp_ms2 = -p_sun * self.cr * self.am_ratio * sun_hat
+            a_srp_ms2 = -p_sun * self.cr * self.am_ratio * self._cached_sun_hat
             a_srp[:] = a_srp_ms2 / 1000.0
 
         # 5. Third-Body Gravity
         a_third = np.zeros_like(v)
         if self.use_third_body:
-            a_third_single = third_body_gravity(
-                np.zeros(3), sim_epoch
-            )  # simplified vectorization since third body is far
-            # for accurate vectorized, we should call it for each r. But third body acceleration is mostly uniform over small LEO distances.
-            # To be precise:
-            import astropy.units as u
-            from astropy.coordinates import GCRS, get_body
-            from astropy.time import Time
-
-            t_obj = Time(sim_epoch)
-            gms = {
-                "moon": 4.9048695e12 / 1e9,
-                "sun": 1.32712440018e20 / 1e9,
-            }
-            for body in ["moon", "sun"]:
-                gm = gms[body]
-                body_pos = (
-                    get_body(body, t_obj).transform_to(GCRS(obstime=t_obj)).cartesian
-                )
-                r_body = np.array(
-                    [
-                        body_pos.x.to_value(u.km),
-                        body_pos.y.to_value(u.km),
-                        body_pos.z.to_value(u.km),
-                    ]
-                )
+            for gm, r_body in [
+                (4.9048695e12 / 1e9, self._cached_moon_pos),
+                (1.32712440018e20 / 1e9, self._cached_sun_pos),
+            ]:
                 r_rel = r_body - r
                 r_rel_mag = np.linalg.norm(r_rel, axis=1)
                 r_body_mag = np.linalg.norm(r_body)
@@ -317,6 +350,34 @@ class NumericalPropagator(BasePropagator):
 
         self._base_epoch = initial_epoch
         y0 = states.flatten()
+
+        mid_epoch = initial_epoch + timedelta(seconds=dt_seconds / 2)
+        if self.include_srp:
+            self._cached_sun_hat = _compute_sun_hat(mid_epoch)
+        if self.use_third_body:
+            import astropy.units as u
+            from astropy.coordinates import GCRS, get_body
+            from astropy.time import Time
+
+            t_mid = Time(mid_epoch)
+            moon_pos = (
+                get_body("moon", t_mid).transform_to(GCRS(obstime=t_mid)).cartesian
+            )
+            self._cached_moon_pos = np.array(
+                [
+                    moon_pos.x.to_value(u.km),
+                    moon_pos.y.to_value(u.km),
+                    moon_pos.z.to_value(u.km),
+                ]
+            )
+            sun_pos = get_body("sun", t_mid).transform_to(GCRS(obstime=t_mid)).cartesian
+            self._cached_sun_pos = np.array(
+                [
+                    sun_pos.x.to_value(u.km),
+                    sun_pos.y.to_value(u.km),
+                    sun_pos.z.to_value(u.km),
+                ]
+            )
 
         sol = solve_ivp(
             fun=self._dynamics_vectorized,
