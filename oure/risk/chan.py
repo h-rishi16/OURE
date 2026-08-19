@@ -59,7 +59,7 @@ class ChanPcCalculator:
         """
         det_C = np.linalg.det(C)
         if det_C <= 1e-20:
-            return 0.0
+            return 1.0 if np.linalg.norm(b) <= self.R else 0.0
 
         C_inv = np.linalg.pinv(C)
 
@@ -74,19 +74,15 @@ class ChanPcCalculator:
         # v = R^2 / (2 * sqrt(det(C)))
         v = self.R**2 / (2 * np.sqrt(lam1 * lam2))
 
-        # Chan's series formula:
-        # Pc = e^-v * sum_{m=0}^{M} (v^m / m!) * (1 - e^-u * sum_{k=0}^m (u^k / k!))
-        # Note: 1 - e^-u * sum_{k=0}^m (u^k / k!) is exactly gammainc(m+1, u) (regularized lower incomplete gamma)
-        # Wait, gammainc(a, x) in scipy is the lower incomplete gamma.
-        # sum_{k=0}^m e^-u u^k / k! is the upper incomplete gamma Q(m+1, u) or 1 - P(m+1, u).
-        # Therefore, 1 - sum... = P(m+1, u) = gammainc(m+1, u)
+        # Guard against log(0) for extremely small covariances
+        v_log = max(v, 1e-300)
 
         pc = 0.0
         for m in range(self.series_terms):
             from math import lgamma
 
             # log(v^m / m! * e^-v)
-            log_weight = -v + m * np.log(max(v, 1e-15)) - lgamma(m + 1)
+            log_weight = -v + m * np.log(v_log) - lgamma(m + 1)
             weight = exp(log_weight)
 
             gamma_term = gammainc(m + 1, u)

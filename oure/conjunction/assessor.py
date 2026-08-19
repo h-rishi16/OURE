@@ -129,6 +129,24 @@ class ConjunctionAssessor:
                     s_tca = s_prop.propagate_to(s_state, tca_epoch)
                     v_rel = float(np.linalg.norm(p_tca.v - s_tca.v))
 
+                    from oure.uncertainty.stm import STMCalculator
+
+                    stm_calc = STMCalculator(fidelity=1)
+
+                    dt_p = (tca_epoch - primary_cov.epoch).total_seconds()
+                    phi_p = stm_calc.compute(primary, dt_p)
+                    p_cov_tca_matrix = phi_p @ primary_cov.matrix @ phi_p.T
+                    p_cov_tca = CovarianceMatrix(
+                        matrix=p_cov_tca_matrix, epoch=tca_epoch, sat_id=primary.sat_id
+                    )
+
+                    dt_s = (tca_epoch - s_cov.epoch).total_seconds()
+                    phi_s = stm_calc.compute(s_state, dt_s)
+                    s_cov_tca_matrix = phi_s @ s_cov.matrix @ phi_s.T
+                    s_cov_tca = CovarianceMatrix(
+                        matrix=s_cov_tca_matrix, epoch=tca_epoch, sat_id=s_state.sat_id
+                    )
+
                     event = ConjunctionEvent(
                         primary_id=primary.sat_id,
                         secondary_id=s_state.sat_id,
@@ -137,8 +155,8 @@ class ConjunctionAssessor:
                         relative_velocity_km_s=v_rel,
                         primary_state=p_tca,
                         secondary_state=s_tca,
-                        primary_covariance=primary_cov,
-                        secondary_covariance=s_cov,
+                        primary_covariance=p_cov_tca,
+                        secondary_covariance=s_cov_tca,
                     )
                     conjunction_events.append(event)
 

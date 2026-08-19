@@ -81,7 +81,7 @@ class FosterPcCalculator:
         C_inv = np.linalg.pinv(C)
         det_C = np.linalg.det(C)
         if det_C <= 0:
-            return 0.0
+            return 1.0 if np.linalg.norm(b) <= self.R else 0.0
         norm_factor = 1.0 / (2 * pi * sqrt(det_C))
         R_sq = self.R**2
 
