@@ -76,11 +76,18 @@ class ManeuverOptimizer:
     ) -> OptimizationResult:
         import math
 
-        start_epoch = self.primary_state.epoch
-        end_epoch = self.nominal_tca - timedelta(minutes=30)
+        res = self._optimize_for_epoch(self.burn_epoch, max_dv_km_s)
 
-        best_result = None
-        best_dv_mag = float("inf")
+        if not res.success:
+            return OptimizationResult(
+                optimal_dv_km_s=np.zeros(3),
+                final_pc=0.0,
+                iterations=res.iterations,
+                success=False,
+                message="No maneuver found satisfying constraints.",
+            )
+
+        dv_mag = float(np.linalg.norm(res.optimal_dv_km_s))
 
         r0 = self.primary_state.r
         v0 = self.primary_state.v
@@ -94,58 +101,35 @@ class ManeuverOptimizer:
                 orig_raan = 2 * math.pi - orig_raan
         orig_raan_deg = math.degrees(orig_raan)
 
-        current_epoch = start_epoch
-        while current_epoch <= end_epoch:
-            res = self._optimize_for_epoch(current_epoch, max_dv_km_s)
-            if res.success:
-                dv_mag = float(np.linalg.norm(res.optimal_dv_km_s))
-                if dv_mag < best_dv_mag:
-                    man = Maneuver(
-                        burn_epoch=current_epoch, delta_v_eci=res.optimal_dv_km_s
-                    )
-                    man_prop = ManeuverPropagator(self.base_prop, [man])
+        man = Maneuver(burn_epoch=self.burn_epoch, delta_v_eci=res.optimal_dv_km_s)
+        man_prop = ManeuverPropagator(self.base_prop, [man])
 
-                    p_post_burn = man_prop.propagate_to(
-                        self.primary_state, current_epoch + timedelta(seconds=1)
-                    )
-                    h_post = np.cross(p_post_burn.r, p_post_burn.v)
-                    n_post = np.cross([0, 0, 1], h_post)
-                    n_post_mag = float(np.linalg.norm(n_post))
-                    post_raan = 0.0
-                    if n_post_mag >= 1e-12:
-                        post_raan = math.acos(n_post[0] / n_post_mag)
-                        if n_post[1] < 0:
-                            post_raan = 2 * math.pi - post_raan
-                    post_raan_deg = math.degrees(post_raan)
+        p_post_burn = man_prop.propagate_to(
+            self.primary_state, self.burn_epoch + timedelta(seconds=1)
+        )
+        h_post = np.cross(p_post_burn.r, p_post_burn.v)
+        n_post = np.cross([0, 0, 1], h_post)
+        n_post_mag = float(np.linalg.norm(n_post))
+        post_raan = 0.0
+        if n_post_mag >= 1e-12:
+            post_raan = math.acos(n_post[0] / n_post_mag)
+            if n_post[1] < 0:
+                post_raan = 2 * math.pi - post_raan
+        post_raan_deg = math.degrees(post_raan)
 
-                    raan_diff = abs(orig_raan_deg - post_raan_deg)
-                    raan_diff = min(raan_diff, 360.0 - raan_diff)
+        raan_diff = abs(orig_raan_deg - post_raan_deg)
+        raan_diff = min(raan_diff, 360.0 - raan_diff)
 
-                    station_keeping_ok = raan_diff <= raan_tolerance_deg
+        station_keeping_ok = raan_diff <= raan_tolerance_deg
 
-                    dv_m_s = dv_mag * 1000.0
-                    fuel_cost_kg = dry_mass_kg * (
-                        math.exp(dv_m_s / (isp * 9.80665)) - 1.0
-                    )
+        dv_m_s = dv_mag * 1000.0
+        fuel_cost_kg = dry_mass_kg * (math.exp(dv_m_s / (isp * 9.80665)) - 1.0)
 
-                    res.burn_epoch = current_epoch
-                    res.fuel_cost_kg = fuel_cost_kg
-                    res.station_keeping_ok = station_keeping_ok
+        res.burn_epoch = self.burn_epoch
+        res.fuel_cost_kg = fuel_cost_kg
+        res.station_keeping_ok = station_keeping_ok
 
-                    best_result = res
-                    best_dv_mag = dv_mag
-
-            current_epoch += timedelta(minutes=10)
-
-        if best_result is None:
-            return OptimizationResult(
-                optimal_dv_km_s=np.zeros(3),
-                final_pc=0.0,
-                iterations=0,
-                success=False,
-                message="No maneuver found satisfying constraints.",
-            )
-        return best_result
+        return res
 
     def _objective(self, dv: np.ndarray) -> float:
         """Objective: Minimize the magnitude of the Delta-V vector (save fuel)."""
