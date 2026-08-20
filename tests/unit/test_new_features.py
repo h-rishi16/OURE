@@ -4,15 +4,8 @@ import numpy as np
 
 from oure.core.models import TLERecord
 from oure.data.spacetrack import compute_tle_quality
-from oure.physics.numerical import NumericalPropagator, third_body_gravity
+from oure.physics.numerical import NumericalPropagator
 from oure.risk.foster import MonteCarloSampler
-
-
-def test_third_body_gravity():
-    pos = np.array([7000.0, 0.0, 0.0])
-    epoch = datetime.now(UTC)
-    acc = third_body_gravity(pos, epoch)
-    assert acc.shape == (3,)
 
 
 def test_numerical_vectorized_third_body():

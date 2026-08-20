@@ -6,7 +6,7 @@ OURE Physics Engine - High Precision Orbit Propagator (HPOP)
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Literal, cast
+from typing import cast
 
 import numpy as np
 from scipy.integrate import solve_ivp
@@ -16,52 +16,6 @@ from oure.core.models import StateVector
 
 from .atmosphere import AtmosphericModel
 from .base import BasePropagator
-
-
-def third_body_gravity(
-    position: np.ndarray,
-    epoch: datetime,
-    bodies: list[Literal["moon", "sun"]] | None = None,
-) -> np.ndarray:
-    """Computes third-body gravity perturbations from Moon and Sun."""
-    if bodies is None:
-        bodies = ["moon", "sun"]
-
-    import astropy.units as u
-    from astropy.coordinates import GCRS, get_body
-    from astropy.time import Time
-
-    a_third = np.zeros(3)
-    t = Time(epoch)
-
-    # GMs in km^3/s^2
-    gms = {
-        "moon": 4.9048695e12 / 1e9,
-        "sun": 1.32712440018e20 / 1e9,
-    }
-
-    for body in bodies:
-        if body not in gms:
-            continue
-        gm = gms[body]
-        # Get position of body in GCRS (Earth-centered inertial)
-        body_pos = get_body(body, t)
-        body_gcrs = body_pos.transform_to(GCRS(obstime=t)).cartesian
-        r_body = np.array(
-            [
-                body_gcrs.x.to_value(u.km),
-                body_gcrs.y.to_value(u.km),
-                body_gcrs.z.to_value(u.km),
-            ]
-        )
-
-        r_rel = r_body - position
-        r_rel_mag = np.linalg.norm(r_rel)
-        r_body_mag = np.linalg.norm(r_body)
-
-        a_third += gm * (r_rel / (r_rel_mag**3) - r_body / (r_body_mag**3))
-
-    return a_third
 
 
 def _compute_sun_hat(epoch: datetime) -> np.ndarray:

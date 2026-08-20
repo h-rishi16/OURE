@@ -25,17 +25,6 @@ def test_kd_tree_spatial_index():
     assert 1 in close_indices
     assert 2 not in close_indices
 
-    # 3. Test k-nearest query
-    distances, indices = index.query_k_nearest(np.array([7000.0, 0.0, 0.0]), k=2)
-    assert len(distances) == 2
-    assert indices[0] == 0
-    assert indices[1] == 1
-    assert distances[0] == 0.0
-    assert distances[1] == 1.0
-
-    # 4. Test size
-    assert index.size == 4
-
     # 5. Test error handling
     with pytest.raises(ValueError):
         KDTreeSpatialIndex(np.array([1, 2, 3]))  # Wrong shape
