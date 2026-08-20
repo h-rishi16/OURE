@@ -34,7 +34,7 @@ This document serves as the formal Risk Management Plan and Risk Register for th
 *   **Likelihood:** 3
 *   **Impact:** 4 (Service Denial)
 *   **Score:** 12
-*   **Mitigation Strategy:** The `MonteCarloUncertaintyPropagator` enforces a strict structural limit (`MAX_SAMPLES = 100_000`). Requests exceeding this limit are logged and automatically clamped to the safe boundary.
+*   **Mitigation Strategy:** FastAPI request models do not expose `mc_samples` to remote API callers, preventing external abuse. For the CLI, it relies on operator discretion, as local users control their own compute limits.
 
 ### RISK-INFRA-02: Celery Worker Deadlocks
 *   **Description:** Background screening tasks enter an infinite loop, starving the queue and halting mission operations.

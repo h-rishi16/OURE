@@ -27,7 +27,7 @@ The system calculates future positions based on misaligned environmental forces,
 ### Root Causes & System Defenses
 
 *   **Cause:** Using the host machine's wall-clock time (`datetime.now()`) to calculate the Sun vector during a simulation that spans days into the future.
-*   **Defense:** The `NumericalPropagator` strictly tracks the `sim_epoch` internally. The `SRPCorrector` queries the `astropy` ephemeris using the exact simulation timestamp, ensuring the Sun vector mathematically rotates correctly throughout the propagation window.
+*   **Defense:** The `NumericalPropagator` strictly tracks the `sim_epoch` internally. It computes the Sun vector inline using an analytical model aligned to the exact simulation timestamp, ensuring the solar radiation pressure force mathematically rotates correctly throughout the propagation window.
 
 ---
 
