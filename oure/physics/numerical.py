@@ -21,9 +21,12 @@ from .base import BasePropagator
 def third_body_gravity(
     position: np.ndarray,
     epoch: datetime,
-    bodies: list[Literal["moon", "sun"]] = ["moon", "sun"],
+    bodies: list[Literal["moon", "sun"]] | None = None,
 ) -> np.ndarray:
     """Computes third-body gravity perturbations from Moon and Sun."""
+    if bodies is None:
+        bodies = ["moon", "sun"]
+
     import astropy.units as u
     from astropy.coordinates import GCRS, get_body
     from astropy.time import Time

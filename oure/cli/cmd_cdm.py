@@ -38,7 +38,7 @@ def assess_cdm(cdm_file: str, hard_body_radius: float) -> None:
             f"Failed to parse CDM: {e}",
             "Ensure the file follows the CCSDS JSON schema.",
         )
-        raise click.ClickException("Process terminated due to an error.")
+        raise click.ClickException("Process terminated due to an error.") from e
 
     UI.success(
         f"Loaded Conjunction Event: [highlight]{event.primary_id}[/highlight] vs [highlight]{event.secondary_id}[/highlight]"

@@ -135,7 +135,7 @@ def analyze_fleet(
             secondary_ids = json.load(f)
     except Exception as e:
         UI.error(f"Failed to read fleet files: {e}")
-        raise click.ClickException("Process terminated due to an error.")
+        raise click.ClickException("Process terminated due to an error.") from e
 
     all_ids = list(set(primary_ids + secondary_ids))
 
@@ -145,7 +145,7 @@ def analyze_fleet(
             flux = oure_ctx.flux_fetcher.get_current_f107()
         except Exception as e:
             UI.error(f"Data fetch failed: {e}")
-            raise click.ClickException("Process terminated due to an error.")
+            raise click.ClickException("Process terminated due to an error.") from e
 
     all_results = []
 

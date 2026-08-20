@@ -107,7 +107,7 @@ def fetch(
             )
     except Exception as e:
         UI.error(f"Critical Fetch Error: {e}")
-        raise click.ClickException("Process terminated due to an error.")
+        raise click.ClickException("Process terminated due to an error.") from e
 
     UI.success(f"Processed {len(records)} TLE records.")
 

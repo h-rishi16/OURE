@@ -39,7 +39,7 @@ class OrekitPropagator(BasePropagator):
                 "you must install it manually via conda:\n"
                 "    conda install -c conda-forge orekit\n\n"
                 "Or stick to the default native Python HPOP/SGP4 backend."
-            )
+            ) from None
 
     def propagate(self, state: StateVector, dt_seconds: float) -> StateVector:
         if not self._orekit_available:

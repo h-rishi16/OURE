@@ -45,7 +45,7 @@ def plot(results_file: str, event_idx: int, output: str) -> None:
             data = json.load(f)
     except Exception as e:
         UI.error(f"Failed to read results file: {e}")
-        raise click.ClickException("Process terminated due to an error.")
+        raise click.ClickException("Process terminated due to an error.") from e
 
     if not data:
         UI.error("No results found in the input file.")

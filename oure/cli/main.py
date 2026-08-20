@@ -3,6 +3,7 @@ OURE Command-Line Interface - Main Entry Point
 ==============================================
 """
 
+from importlib.metadata import version as _pkg_version
 from pathlib import Path
 
 import rich_click as click
@@ -85,7 +86,7 @@ class OUREContext:
 @click.option(
     "--log-file", type=click.Path(), default=None, help="Path to write log output."
 )
-@click.version_option(version="1.0.0", prog_name="OURE")
+@click.version_option(version=_pkg_version("oure"), prog_name="OURE")
 @click.pass_context
 def cli(
     ctx: click.Context,

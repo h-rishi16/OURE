@@ -33,7 +33,7 @@ def check_conjunctions(
     )
     overlap_all_dims = np.all(overlap, axis=2)
     i_idx, j_idx = np.where(overlap_all_dims)
-    valid_pairs = [(int(i), int(j)) for i, j in zip(i_idx, j_idx) if i < j]
+    valid_pairs = [(int(i), int(j)) for i, j in zip(i_idx, j_idx, strict=True) if i < j]
     if not valid_pairs:
         return []
     if workers is None:

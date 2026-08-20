@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-07-22
+## [1.1.0] - 2026-08-15
 
 ### Added
 - **Next.js 3D Globe Frontend:** Integrated React Three Fiber for interactive 3D visualization of satellite fleets and conjunctions.
@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Physics Rendering Performance:** Optimized the Globe.tsx UPDATE_CHUNKS parameter to significantly reduce CPU overhead on client browsers.
 - **Mypy Type Checking:** Resolved strict dimensional assignment errors in 3D coordinate meshes.
+
+## [1.0.0] - 2026-07-22
 
 ### Added
 - **Initial Production Release:** OURE (Orbital Uncertainty & Risk Engine) is now stable and ready for enterprise deployment.

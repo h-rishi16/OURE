@@ -278,6 +278,3 @@ class SpaceTrackFetcher(BaseDataFetcher):
         object.__setattr__(record, "quality_score", quality)
 
         return record
-
-
-ord

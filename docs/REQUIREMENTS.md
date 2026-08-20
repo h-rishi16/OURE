@@ -4,11 +4,11 @@ This document establishes bi-directional traceability (SWE-052) between software
 
 | Requirement ID | Description | Verification Method | Associated Tests |
 | :--- | :--- | :--- | :--- |
-| **REQ-PHYS-01** | The system shall support Analytical Orbit Propagation using the SGP4 algorithm for TEME to GCRF coordinates. | Automated Test | `test_sgp4_propagation`, `test_teme_to_gcrf_rotation` |
-| **REQ-PHYS-02** | The system shall support High-Precision Numerical Propagation (HPOP) utilizing RK45 integration. | Automated Test | `test_numerical_propagate`, `test_hpop_accuracy` |
+| **REQ-PHYS-01** | The system shall support Analytical Orbit Propagation using the SGP4 algorithm for TEME to GCRF coordinates. | Automated Test | `test_sgp4_base`, `test_sgp4_propagate_sequence` |
+| **REQ-PHYS-02** | The system shall support High-Precision Numerical Propagation (HPOP) utilizing RK45 integration. | Automated Test | `test_numerical_propagator`, `test_numerical_propagate_many` |
 | **REQ-PHYS-03** | The system shall compute Probability of Collision (Pc) using the 2D Foster (1992) equation on the encounter B-Plane. | Automated Test | `test_foster_pc_known_value` |
-| **REQ-DATA-01** | The system shall securely fetch and cache Two-Line Elements (TLEs) from Space-Track.org. | Automated Test | `test_spacetrack_fetcher` |
-| **REQ-DATA-02** | The system shall ingest F10.7 Solar Flux data from NOAA for atmospheric density models. | Automated Test | `test_noaa_fetcher` |
+| **REQ-DATA-01** | The system shall securely fetch and cache Two-Line Elements (TLEs) from Space-Track.org. | Automated Test | `test_spacetrack_fetcher_fetch_from_network`, `test_spacetrack_fetcher_login_success` |
+| **REQ-DATA-02** | The system shall ingest F10.7 Solar Flux data from NOAA for atmospheric density models. | Automated Test | `test_noaa_fetcher_network_fetch`, `test_noaa_fetcher_cache_hit` |
 | **REQ-DATA-03** | The system shall parse and export CCSDS standardized Conjunction Data Messages (CDM). | Automated Test | `test_cdm_parser`, `test_cdm_writer` |
 | **REQ-RISK-01** | The system shall recommend Delta-V maneuvers utilizing SLSQP to achieve a target Pc of 1e-5. | Automated Test | `test_maneuver_optimizer` |
 | **REQ-OPS-01** | The system shall support a periodic Watchlist monitoring daemon to evaluate specific assets against the public catalog. | Automated Test | `test_watchlist_monitor_run_screening_and_alerts` |

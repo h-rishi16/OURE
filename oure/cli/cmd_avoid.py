@@ -244,7 +244,7 @@ def avoid(
             flux = oure_ctx.flux_fetcher.get_current_f107()
         except Exception as e:
             UI.error(f"Data ingestion failed: {e}")
-            raise click.ClickException("Process terminated due to an error.")
+            raise click.ClickException("Process terminated due to an error.") from e
 
     if primary not in records or secondary not in records:
         UI.error(f"Satellite data missing for {primary} or {secondary}.")

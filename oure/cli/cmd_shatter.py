@@ -79,7 +79,7 @@ def shatter(
         UI.success("No collision detected in look-ahead window.")
         return
 
-    tca, miss = tca_result
+    tca, _ = tca_result
 
     # We force a collision at TCA for the simulation
     p_tca = base_prop.propagate_to(p_state, tca)

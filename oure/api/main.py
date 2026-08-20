@@ -381,7 +381,7 @@ def simulate_avoidance(req: AvoidRequest) -> AvoidResponse:
             status_code=404, detail="No collision detected in look-ahead window."
         )
 
-    tca, miss = tca_result
+    tca, _ = tca_result
 
     burn_epoch = tca - timedelta(hours=req.burn_time_before_tca_hours)
     optimizer = ManeuverOptimizer(

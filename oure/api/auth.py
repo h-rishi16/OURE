@@ -20,7 +20,7 @@ class APIKeyManager:
         return bool(self.redis.exists(f"apikey:{key}"))
 
     def check_rate_limit(self, key: str) -> bool:
-        # sliding window: increment counter in Redis, expire after 60s
+        # fixed-window: increment counter in Redis, expire after 60s
         current_minute = int(time.time() // 60)
         rate_key = f"rate:{key}:{current_minute}"
 

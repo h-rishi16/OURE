@@ -130,7 +130,7 @@ def analyze(
                 secondary_ids.extend(json.load(f))
         except Exception as e:
             UI.error(f"Failed to read secondaries file: {e}")
-            raise click.ClickException("Process terminated due to an error.")
+            raise click.ClickException("Process terminated due to an error.") from e
 
     if not secondary_ids:
         UI.error(
@@ -160,7 +160,7 @@ def analyze(
             progress.update(task1, advance=1)
         except Exception as e:
             UI.error(f"Data fetch failed: {e}")
-            raise click.ClickException("Process terminated due to an error.")
+            raise click.ClickException("Process terminated due to an error.") from e
 
     console.print(
         f"   [success]DONE[/success] [info]F10.7={flux:.1f}[/info] [dim]|[/dim] [success]{len(records)} TLEs loaded[/success]"
