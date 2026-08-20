@@ -127,7 +127,7 @@ function Satellites({
   warningLevel?: string | null
 }) {
   const meshRef = useRef<THREE.Points>(null);
-  const ellipsoidRef = useRef<THREE.Mesh>(null);
+  const ellipsoidRef = useRef<THREE.Group>(null);
 
   const satellites = useMemo(() => {
     const sats: SatelliteData[] = [];
@@ -394,13 +394,13 @@ function Satellites({
         ellipsoidRef.current.visible = false;
       }
 
+      const defaultTarget = new THREE.Vector3(0, 0, 0);
+      if (controlsRef.current.target && typeof controlsRef.current.target.distanceToSquared === 'function') {
+        controlsRef.current.target.lerp(defaultTarget, 0.03);
+      }
+
       if (isBootZooming.current) {
         const homePos = new THREE.Vector3(0, 5000, 25000);
-        const defaultTarget = new THREE.Vector3(0, 0, 0);
-
-        if (controlsRef.current.target && typeof controlsRef.current.target.distanceToSquared === 'function') {
-          controlsRef.current.target.lerp(defaultTarget, 0.03);
-        }
 
         state.camera.position.lerp(homePos, 0.015);
 
@@ -615,7 +615,8 @@ export default function Globe({
   secondarySatId?: string | null,
   timeOffsetMinutes?: number,
   escapeTrajectory?: number[][] | null,
-  warningLevel?: string | null
+  warningLevel?: string | null,
+  isInfrared?: boolean
 }) {
   manualTimeOffset = timeOffsetMinutes * 60000;
   const [autoRotate, setAutoRotate] = useState(true);
@@ -667,7 +668,7 @@ export default function Globe({
           dampingFactor={0.05}
           minDistance={focusSatId ? 100 : 7000}
           maxDistance={120000}
-          enablePan={true}
+          enablePan={false}
           autoRotate={focusSatId ? false : autoRotate}
           autoRotateSpeed={0.15}
         />
