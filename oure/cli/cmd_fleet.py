@@ -70,7 +70,7 @@ def _screen_single_primary(
         calculator = RiskCalculator(hard_body_radius_m=hard_body_radius)
         results = [calculator.compute_pc(e) for e in events]
         return results
-    except Exception as e:
+    except Exception:
         import traceback
 
         traceback.print_exc()
@@ -139,7 +139,7 @@ def analyze_fleet(
 
     all_ids = list(set(primary_ids + secondary_ids))
 
-    with console.status("[bold cyan]Fetching TLE data...") as status:
+    with console.status("[bold cyan]Fetching TLE data..."):
         try:
             records = {r.sat_id: r for r in oure_ctx.tle_fetcher.fetch(sat_ids=all_ids)}
             flux = oure_ctx.flux_fetcher.get_current_f107()

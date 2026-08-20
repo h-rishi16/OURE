@@ -51,7 +51,7 @@ def shatter(
         "Collision Fragmentation Engine", "NASA-standard hypervelocity breakup modeling"
     )
 
-    with console.status("[bold cyan]Fetching orbital data...") as status:
+    with console.status("[bold cyan]Fetching orbital data..."):
         records = {
             r.sat_id: r
             for r in oure_ctx.tle_fetcher.fetch(sat_ids=[primary, secondary])

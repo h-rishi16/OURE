@@ -79,7 +79,7 @@ def fetch(
     oure_ctx: OUREContext = ctx.obj
     UI.header("Data Ingestion Engine", "Syncing orbital catalogs and space weather")
 
-    with console.status("[bold cyan]Fetching solar flux from NOAA...") as status:
+    with console.status("[bold cyan]Fetching solar flux from NOAA..."):
         flux_data = oure_ctx.flux_fetcher.fetch()
         if flux_data:
             f = flux_data[0]
@@ -101,7 +101,7 @@ def fetch(
         return
 
     try:
-        with console.status("[bold cyan]Querying Space-Track API...") as status:
+        with console.status("[bold cyan]Querying Space-Track API..."):
             records = oure_ctx.tle_fetcher.fetch(
                 sat_ids=ids_to_fetch, force_refresh=force_refresh
             )

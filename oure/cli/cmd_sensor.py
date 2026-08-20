@@ -43,7 +43,7 @@ def task_sensor(
         "Sensor Tasking Simulator", "Collapsing covariance via commercial radar updates"
     )
 
-    with console.status("[bold cyan]Fetching current orbital data...") as status:
+    with console.status("[bold cyan]Fetching current orbital data..."):
         records = {
             r.sat_id: r
             for r in oure_ctx.tle_fetcher.fetch(sat_ids=[primary, secondary])
@@ -75,7 +75,7 @@ def task_sensor(
     search_start = p_state.epoch
     search_end = search_start + timedelta(hours=72)
 
-    with console.status("[bold cyan]Locating TCA...") as status:
+    with console.status("[bold cyan]Locating TCA..."):
         tca_result = tca_finder.find_tca(
             p_state, base_prop, s_state, base_prop, search_start, search_end
         )
