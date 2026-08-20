@@ -20,9 +20,9 @@ def runner():
 def test_screen_single_primary_happy_path(sample_tle):
     # Mock everything to just test the flow
     with (
-        patch("oure.cli.cmd_fleet._tle_to_initial_state") as mock_state,
-        patch("oure.cli.cmd_fleet.PropagatorFactory.build") as mock_prop,
-        patch("oure.cli.cmd_fleet._default_covariance") as mock_cov,
+        patch("oure.cli.cmd_fleet._tle_to_initial_state"),
+        patch("oure.cli.cmd_fleet.PropagatorFactory.build"),
+        patch("oure.cli.cmd_fleet._default_covariance"),
         patch("oure.cli.cmd_fleet.ConjunctionAssessor") as mock_assessor_cls,
         patch("oure.cli.cmd_fleet.RiskCalculator") as mock_calc_cls,
     ):

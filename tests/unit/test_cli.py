@@ -21,7 +21,7 @@ def test_fetch_no_args(mock_context_class, runner):
 
     with (
         patch("oure.cli.cmd_fetch.UI", UI),
-        patch("oure.cli.cmd_fetch.console") as mock_console,
+        patch("oure.cli.cmd_fetch.console"),
     ):
         result = runner.invoke(
             cli, ["--st-username", "u", "--st-password", "p", "fetch"]
@@ -67,7 +67,7 @@ def test_fetch_all_leo(mock_noaa, mock_spacetrack, runner):
     mock_spacetrack.return_value = []
     with (
         patch("oure.cli.cmd_fetch.UI", UI),
-        patch("oure.cli.cmd_fetch.console") as mock_console,
+        patch("oure.cli.cmd_fetch.console"),
     ):
         result = runner.invoke(
             cli, ["--st-username", "u", "--st-password", "p", "fetch", "--all-leo"]

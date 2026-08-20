@@ -8,8 +8,6 @@ from oure.data.spacetrack import SpaceTrackFetcher, compute_tle_quality
 
 
 def test_compute_tle_quality_edge_cases():
-    record = TLERecord("1", "TEST", "", "", datetime.now(UTC), 0, 0, 0, 0, 0, 15.0, 0)
-
     # Negative age (future epoch somehow)
     record_future = TLERecord(
         "1",
