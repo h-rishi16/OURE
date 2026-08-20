@@ -192,7 +192,9 @@ class ManeuverOptimizer:
         burn_state = self.base_prop.propagate_to(self.primary_state, burn_epoch)
 
         v_hat = burn_state.v / np.linalg.norm(burn_state.v)
-        x0 = v_hat * 1e-5
+        # Seed with a 1 m/s prograde nudge — large enough for SLSQP to
+        # sense the Pc constraint gradient and walk toward the true minimum.
+        x0 = v_hat * 1e-3
 
         bnds = [(-max_dv_km_s, max_dv_km_s)] * 3
 
@@ -209,7 +211,7 @@ class ManeuverOptimizer:
             method="SLSQP",
             bounds=bnds,
             constraints=cons,
-            options={"disp": False, "ftol": 1e-8, "maxiter": 25},
+            options={"disp": False, "ftol": 1e-8, "maxiter": 100},
         )
 
         if res.success:
