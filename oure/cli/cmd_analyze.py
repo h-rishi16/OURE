@@ -103,6 +103,13 @@ def validate_norad_id(
     is_flag=True,
     help="Generate interactive 3D HTML visualization of conjunctions",
 )
+@click.option(
+    "--method",
+    type=click.Choice(["foster", "alfano", "chan", "monte_carlo"]),
+    default="foster",
+    show_default=True,
+    help="Pc calculation method.",
+)
 def analyze(
     ctx: click.Context,
     primary: str,
@@ -114,6 +121,7 @@ def analyze(
     mc_samples: int,
     hard_body_radius: float,
     output: str | None,
+    method: str,
 ) -> list[RiskResult] | None:
     """
     Run full conjunction assessment and Pc calculation pipeline.
@@ -202,7 +210,9 @@ def analyze(
 
     console.print(f"\n[warning]Found {len(events)} conjunction event(s):[/warning]\n")
 
-    calculator = RiskCalculator(hard_body_radius_m=hard_body_radius)
+    calculator = RiskCalculator(
+        hard_body_radius_m=hard_body_radius, method=method, mc_samples=mc_samples
+    )
     results = []
 
     for i, event in enumerate(events):

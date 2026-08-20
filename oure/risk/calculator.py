@@ -22,9 +22,15 @@ class RiskCalculator:
     Computes the Probability of Collision for a ConjunctionEvent.
     """
 
-    def __init__(self, hard_body_radius_m: float = 20.0, method: str = "foster"):
+    def __init__(
+        self,
+        hard_body_radius_m: float = 20.0,
+        method: str = "foster",
+        mc_samples: int = 100000,
+    ):
         self.hard_body_radius_km = hard_body_radius_m / 1000.0
         self.bplane_projector = BPlaneProjector()
+        self.mc_samples = mc_samples
 
         self.method = method.lower()
         self.pc_calculator: Any
@@ -34,8 +40,18 @@ class RiskCalculator:
             from .chan import ChanPcCalculator
 
             self.pc_calculator = ChanPcCalculator(self.hard_body_radius_km)
+        elif self.method == "monte_carlo":
+            from .foster import PcMethod
+
+            self.pc_calculator = FosterPcCalculator(
+                self.hard_body_radius_km,
+                method=PcMethod.MONTE_CARLO,
+                mc_samples=self.mc_samples,
+            )
         else:
-            self.pc_calculator = FosterPcCalculator(self.hard_body_radius_km)
+            self.pc_calculator = FosterPcCalculator(
+                self.hard_body_radius_km, mc_samples=self.mc_samples
+            )
 
     def compute_pc(self, event: ConjunctionEvent) -> RiskResult:
         """

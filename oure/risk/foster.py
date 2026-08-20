@@ -45,12 +45,14 @@ class FosterPcCalculator:
         integration_sigma: float = 5.0,
         series_terms: int = 5,
         use_mc_fallback: bool = True,
+        mc_samples: int = 100000,
     ):
         self.R = hard_body_radius_km
         self.method = method
         self.integration_sigma = integration_sigma
         self.series_terms = series_terms
         self.use_mc_fallback = use_mc_fallback
+        self.mc_samples = mc_samples
 
     def compute(
         self, b_miss: np.ndarray, C_2d: np.ndarray, propagation_age_hours: float = 0.0
@@ -63,12 +65,15 @@ class FosterPcCalculator:
         logger = logging.getLogger("oure.risk.foster")
 
         miss_distance = np.linalg.norm(b_miss)
-        if self.use_mc_fallback and (
-            propagation_age_hours > 8.0 or miss_distance < 3.0 * self.R
+        if (self.method == PcMethod.MONTE_CARLO) or (
+            self.use_mc_fallback
+            and (propagation_age_hours > 8.0 or miss_distance < 3.0 * self.R)
         ):
-            logger.debug("FosterPcCalculator: Using MONTE_CARLO fallback.")
+            logger.debug("FosterPcCalculator: Using MONTE_CARLO.")
             self.method = PcMethod.MONTE_CARLO
-            return MonteCarloSampler.compute_pc(b_miss, C_2d, self.R)
+            return MonteCarloSampler.compute_pc(
+                b_miss, C_2d, self.R, n_samples=self.mc_samples
+            )
 
         if self.method == PcMethod.NUMERICAL:
             logger.debug("FosterPcCalculator: Using NUMERICAL method.")
