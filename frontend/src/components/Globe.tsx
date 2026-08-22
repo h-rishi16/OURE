@@ -110,6 +110,7 @@ function Satellites({
   filter,
   onSelectSat,
   focusSatId,
+  primarySatId,
   secondarySatId,
   controlsRef,
   timeOffsetMinutes = 0,
@@ -120,6 +121,7 @@ function Satellites({
   filter: string,
   onSelectSat: (sat: SatelliteData) => void,
   focusSatId?: string | null,
+  primarySatId?: string | null,
   secondarySatId?: string | null,
   controlsRef?: React.MutableRefObject<any>,
   timeOffsetMinutes?: number,
@@ -239,12 +241,22 @@ function Satellites({
       colArray[i * 3 + 2] = sat.color[2];
     });
 
-    if (focusSatId) {
-      const idx = satellites.findIndex(s => s.id === focusSatId);
+    if (primarySatId) {
+      const idx = satellites.findIndex(s => s.id === primarySatId);
       if (idx !== -1) {
         colArray[idx * 3] = 0.0;
         colArray[idx * 3 + 1] = 1.0;
         colArray[idx * 3 + 2] = 1.0;
+      }
+    }
+
+    if (focusSatId && focusSatId !== primarySatId) {
+      const idx = satellites.findIndex(s => s.id === focusSatId);
+      if (idx !== -1) {
+        // Subtle white/grey for unassigned camera focus
+        colArray[idx * 3] = 0.8;
+        colArray[idx * 3 + 1] = 0.8;
+        colArray[idx * 3 + 2] = 0.8;
       }
     }
 
@@ -258,7 +270,7 @@ function Satellites({
     }
 
     colorAttr.needsUpdate = true;
-  }, [focusSatId, secondarySatId, satellites]);
+  }, [focusSatId, primarySatId, secondarySatId, satellites]);
 
   const UPDATE_CHUNKS = 30;
   const chunkRef = useRef(0);
@@ -396,21 +408,24 @@ function Satellites({
 
       const defaultTarget = new THREE.Vector3(0, 0, 0);
       if (controlsRef.current.target && typeof controlsRef.current.target.distanceToSquared === 'function') {
-        controlsRef.current.target.lerp(defaultTarget, 0.03);
+        const distToCenter = controlsRef.current.target.distanceTo(defaultTarget);
+        if (distToCenter > 1) {
+          // Keep the camera exactly where the user left it, just pan the lens to face the Earth center
+          const oldPos = state.camera.position.clone();
+          controlsRef.current.target.lerp(defaultTarget, 0.08);
+          state.camera.position.copy(oldPos);
+        } else {
+          controlsRef.current.target.copy(defaultTarget);
+        }
       }
 
       if (isBootZooming.current) {
         const homePos = new THREE.Vector3(0, 5000, 25000);
-
         state.camera.position.lerp(homePos, 0.015);
-
         if (state.camera.position.distanceTo(homePos) < 1500) {
           isBootZooming.current = false;
         }
       }
-
-      // No longer forcing a programmatic zoom-out on deselection.
-      // Letting the user maintain manual control of the camera via OrbitControls.
 
       if (state.camera.position.length() < 6400) {
          state.camera.position.setLength(6400);
@@ -532,7 +547,10 @@ function Satellites({
         />
       </mesh>
     </group>
-      <Trajectory focusSatId={focusSatId} satellites={satellites} color="#00ffff" timeOffsetMinutes={timeOffsetMinutes} />
+      <Trajectory focusSatId={primarySatId} satellites={satellites} color="#00ffff" timeOffsetMinutes={timeOffsetMinutes} />
+      {focusSatId !== primarySatId && focusSatId !== secondarySatId && (
+        <Trajectory focusSatId={focusSatId} satellites={satellites} color="#cccccc" timeOffsetMinutes={timeOffsetMinutes} />
+      )}
       <Trajectory focusSatId={secondarySatId} satellites={satellites} color="#eab308" timeOffsetMinutes={timeOffsetMinutes} />
       {escapeTrajectory && escapeTrajectory.length > 0 && (
         <Line
@@ -547,7 +565,8 @@ function Satellites({
   );
 }
 
-function Trajectory({ focusSatId, satellites, color = "#ff0a2a", timeOffsetMinutes }: { focusSatId?: string | null, satellites: SatelliteData[], color?: string, timeOffsetMinutes: number }) {
+function Trajectory({ focusSatId, satellites, color = "#ff0a2a", timeOffsetMinutes }: { focusSatId?: string | null,
+  primarySatId?: string | null, satellites: SatelliteData[], color?: string, timeOffsetMinutes: number }) {
   const points = useMemo(() => {
     if (!focusSatId) return [];
     if (focusSatId === 'JWST-1') return [];
@@ -602,6 +621,7 @@ export default function Globe({
   filter,
   onSelectSat,
   focusSatId,
+  primarySatId,
   secondarySatId,
   timeOffsetMinutes = 0,
   escapeTrajectory,
@@ -612,6 +632,7 @@ export default function Globe({
   filter: string,
   onSelectSat: (sat: SatelliteData) => void,
   focusSatId?: string | null,
+  primarySatId?: string | null,
   secondarySatId?: string | null,
   timeOffsetMinutes?: number,
   escapeTrajectory?: number[][] | null,
@@ -643,6 +664,7 @@ export default function Globe({
           filter={filter}
           onSelectSat={onSelectSat}
           focusSatId={focusSatId}
+          primarySatId={primarySatId}
           secondarySatId={secondarySatId}
           controlsRef={controlsRef}
           timeOffsetMinutes={timeOffsetMinutes}
@@ -666,7 +688,7 @@ export default function Globe({
           ref={controlsRef}
           enableDamping
           dampingFactor={0.05}
-          minDistance={focusSatId ? 100 : 7000}
+          minDistance={100}
           maxDistance={120000}
           enablePan={false}
           autoRotate={focusSatId ? false : autoRotate}

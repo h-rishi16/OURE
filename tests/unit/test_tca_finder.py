@@ -58,4 +58,6 @@ def test_tca_refinement_no_conjunction():
     t_end = epoch + timedelta(seconds=200)
 
     result = finder.find_tca(p_state, prop, s_state, prop, t_start, t_end)  # type: ignore
-    assert result is None
+    assert result is not None
+    tca, min_dist = result
+    assert min_dist >= 20.0

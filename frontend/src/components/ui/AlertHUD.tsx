@@ -81,31 +81,37 @@ export const AlertHUD: React.FC<AlertHUDProps> = ({
       <div className="flex items-center gap-2 md:gap-3 w-full">
           <button
             onClick={() => {
-              setPrimaryTarget(activeSat);
-              setShowMissionControl(true);
+              if (primaryTarget?.id === activeSat.id) {
+                setPrimaryTarget(null);
+              } else {
+                setPrimaryTarget(activeSat);
+                setShowMissionControl(true);
+              }
             }}
-            disabled={primaryTarget?.id === activeSat.id}
             className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
               primaryTarget?.id === activeSat.id
-                ? 'bg-white/10 border-[#00ff88] text-white shadow-[0_0_15px_rgba(0,255,136,0.2)] cursor-default'
+                ? 'bg-white/10 border-[#00ff88] text-white shadow-[0_0_15px_rgba(0,255,136,0.2)]'
                 : 'bg-transparent border-white/20 text-white hover:bg-white/10'
             }`}
           >
-            {primaryTarget?.id === activeSat.id ? 'Primary Set' : 'Set Primary'}
+            {primaryTarget?.id === activeSat.id ? 'Clear Primary' : 'Set Primary'}
           </button>
           <button
             onClick={() => {
-              setSecondaryTarget(activeSat);
-              setShowMissionControl(true);
+              if (secondaryTarget?.id === activeSat.id) {
+                setSecondaryTarget(null);
+              } else {
+                setSecondaryTarget(activeSat);
+                setShowMissionControl(true);
+              }
             }}
-            disabled={secondaryTarget?.id === activeSat.id}
             className={`flex-1 text-[10px] font-bold uppercase tracking-[0.15em] p-3 rounded-xl border transition-all duration-300 ${
               secondaryTarget?.id === activeSat.id
-                ? 'bg-white/10 border-[#00ffff] text-white shadow-[0_0_15px_rgba(0,255,255,0.2)] cursor-default'
+                ? 'bg-white/10 border-[#00ffff] text-white shadow-[0_0_15px_rgba(0,255,255,0.2)]'
                 : 'bg-transparent border-white/20 text-white hover:bg-white/10'
             }`}
           >
-            {secondaryTarget?.id === activeSat.id ? 'Secondary Set' : 'Set Secondary'}
+            {secondaryTarget?.id === activeSat.id ? 'Clear Secondary' : 'Set Secondary'}
           </button>
       </div>
     </>

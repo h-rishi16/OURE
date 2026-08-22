@@ -187,7 +187,10 @@ def analyze_pair_sync(req: PairRequest) -> RiskResponse:
 
     secondaries_data = [(secondary_state, secondary_cov, secondary_prop)]
 
-    assessor = ConjunctionAssessor(screening_distance_km=50.0)
+    # Increased from 50km to 50,000km so the physics engine will calculate
+    # a REAL probability (even if it's 1 in 10 billion) for almost any two satellites the user clicks.
+    assessor = ConjunctionAssessor(screening_distance_km=50000.0)
+
     events = assessor.find_conjunctions(
         primary_state,
         primary_cov,
@@ -339,8 +342,8 @@ def simulate_avoidance(req: AvoidRequest) -> AvoidResponse:
     from oure.core.utils import tle_to_initial_state as _tle_to_initial_state
     from oure.data.noaa import NOAASolarFluxFetcher
     from oure.data.spacetrack import SpaceTrackFetcher
+    from oure.physics.factory import PropagatorFactory
     from oure.physics.maneuver import Maneuver, ManeuverPropagator
-    from oure.physics.numerical import NumericalPropagator
     from oure.risk.optimizer import ManeuverOptimizer
 
     tle_fetcher = SpaceTrackFetcher(
@@ -366,7 +369,8 @@ def simulate_avoidance(req: AvoidRequest) -> AvoidResponse:
     p_cov = _default_covariance(req.primary_id)
     s_cov = _default_covariance(req.secondary_id)
 
-    base_prop = NumericalPropagator(solar_flux=flux)
+    # Use SGP4 instead of NumericalPropagator for web API speed to prevent timeouts
+    base_prop = PropagatorFactory.build(records[req.primary_id], solar_flux=flux)
     tca_finder = TCARefinementEngine()
 
     search_start = p_state.epoch

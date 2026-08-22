@@ -3,21 +3,23 @@ import { Target, X } from 'lucide-react';
 import { formatProbability } from '@/lib/utils';
 
 export interface AnalysisOverlayProps {
+  primaryTarget: any;
+  secondaryTarget: any;
   analysisState: 'idle' | 'computing' | 'complete';
   analysisResult: any;
   avoidState: 'idle' | 'computing' | 'complete';
   avoidResult: any;
   onClose: () => void;
-  onOptimizeAvoidance: () => void;
 }
 
 export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({
+  primaryTarget,
+  secondaryTarget,
   analysisState,
   analysisResult,
   avoidState,
   avoidResult,
-  onClose,
-  onOptimizeAvoidance
+  onClose
 }) => {
   return (
     <div
@@ -56,9 +58,15 @@ export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({
               <X className="w-6 h-6" />
             </button>
 
-            <h2 className="text-3xl font-bold tracking-tight text-white uppercase mb-8 font-display">
+            <h2 className="text-3xl font-bold tracking-tight text-white uppercase mb-4 font-display">
               Conjunction Analysis
             </h2>
+
+            <div className="flex flex-col items-center gap-2 mb-10">
+              <span className="text-sm font-mono text-neutral-400">
+                <span className="text-white">{primaryTarget?.name || primaryTarget?.id}</span> vs <span className="text-white">{secondaryTarget?.name || secondaryTarget?.id}</span>
+              </span>
+            </div>
 
             <div className="flex flex-col gap-8 mb-8 text-left w-full px-4">
               <div>
@@ -98,51 +106,8 @@ export const AnalysisOverlay: React.FC<AnalysisOverlayProps> = ({
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex w-full mt-4 border-t border-white/10 pt-6 px-4">
-              <button
-                onClick={onOptimizeAvoidance}
-                disabled={avoidState === 'computing' || avoidState === 'complete'}
-                className={`w-full group flex items-center justify-between p-4 rounded-xl transition-all duration-300 disabled:cursor-not-allowed ${
-                  avoidState === 'complete' ? 'bg-white text-black' : 'bg-transparent border border-white/20 hover:border-white/40'
-                }`}
-              >
-                <div className="flex flex-col items-start text-left">
-                  <span className={`text-xs uppercase tracking-widest font-medium ${avoidState === 'complete' ? 'text-black' : 'text-white'}`}>
-                    {avoidState === 'computing' ? 'Optimizing Trajectory...' : avoidState === 'complete' ? 'Maneuver Optimized' : 'Calculate Avoidance'}
-                  </span>
-                  {avoidState === 'idle' && (
-                    <span className="text-neutral-500 font-mono text-[10px] mt-1 tracking-wider group-hover:text-neutral-400 transition-colors">Compute Delta-V Vector</span>
-                  )}
-                </div>
-                {avoidState === 'computing' && (
-                   <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                )}
-              </button>
-            </div>
 
-            {avoidResult && (
-              <div className="mt-6 px-4 flex flex-col text-left">
-                <div className="flex justify-between items-baseline mb-4">
-                  <span className="text-xs uppercase tracking-widest text-neutral-500 font-medium">Maneuver Telemetry (T-12h)</span>
-                  <span className="text-white font-mono text-sm tracking-tight">{formatProbability(avoidResult.pc)} <span className="text-[10px] text-neutral-500 ml-1">POST-BURN RISK</span></span>
-                </div>
-                <div className="flex gap-8 border-t border-white/10 pt-4">
-                  <div>
-                    <span className="text-[10px] uppercase tracking-widest text-neutral-500 mb-1 block">Delta-X</span>
-                    <span className="font-mono text-white text-lg tracking-wider">{(avoidResult.dv[0] * 1000).toFixed(3)} <span className="text-xs text-neutral-500">m/s</span></span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-widest text-neutral-500 mb-1 block">Delta-Y</span>
-                    <span className="font-mono text-white text-lg tracking-wider">{(avoidResult.dv[1] * 1000).toFixed(3)} <span className="text-xs text-neutral-500">m/s</span></span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase tracking-widest text-neutral-500 mb-1 block">Delta-Z</span>
-                    <span className="font-mono text-white text-lg tracking-wider">{(avoidResult.dv[2] * 1000).toFixed(3)} <span className="text-xs text-neutral-500">m/s</span></span>
-                  </div>
-                </div>
-              </div>
-            )}
+
           </div>
         )}
       </div>

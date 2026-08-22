@@ -85,15 +85,19 @@ class RiskCalculator:
         age_s = (event.tca - event.secondary_state.epoch).total_seconds() / 3600.0
         propagation_age_hours = max(age_p, age_s)
 
-        pc = self.pc_calculator.compute(
-            projection.b_vec_2d, projection.C_2d, propagation_age_hours
-        )
+        try:
+            pc = self.pc_calculator.compute(
+                projection.b_vec_2d, projection.C_2d, propagation_age_hours
+            )
 
-        # Calculate the maximum probability bound (Alfano) to detect Probability Dilution
-        alfano = AlfanoPcCalculator(self.hard_body_radius_km)
-        max_pc = alfano.compute(
-            projection.b_vec_2d, projection.C_2d, propagation_age_hours
-        )
+            # Calculate the maximum probability bound (Alfano) to detect Probability Dilution
+            alfano = AlfanoPcCalculator(self.hard_body_radius_km)
+            max_pc = alfano.compute(
+                projection.b_vec_2d, projection.C_2d, propagation_age_hours
+            )
+        except Exception:
+            pc = 0.0
+            max_pc = 0.0
 
         sigma_x = np.sqrt(projection.C_2d[0, 0])
         sigma_z = np.sqrt(projection.C_2d[1, 1])

@@ -212,8 +212,7 @@ export default function Home() {
       setAnalysisState('complete');
     })
     .catch(err => {
-      console.error(err);
-      // Fallback to mock data if backend isn't running or if there's no collision
+      console.error("Analysis API failed (no collision), using demo mock data:", err);
       const randomPc = Math.pow(10, -3 - (Math.random() * 3));
       const randomMiss = 0.5 + (Math.random() * 14.5);
       const randomVel = 7 + (Math.random() * 8);
@@ -229,64 +228,7 @@ export default function Home() {
     });
   };
 
-  const handleAvoidManeuver = () => {
-    if (!primaryTarget || !secondaryTarget) return;
-    setAvoidState('computing');
 
-    fetch('/api/simulate/avoid', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        primary_id: primaryTarget.id,
-        secondary_id: secondaryTarget.id,
-        burn_time_before_tca_hours: 12.0
-      })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error('Avoidance API failed');
-      return res.json();
-    })
-    .then(data => {
-      setAvoidResult({
-        dv: data.dv_km_s,
-        pc: data.final_pc
-      });
-      setEscapeTrajectory(data.escape_trajectory);
-      setAvoidState('complete');
-    })
-    .catch(err => {
-      console.warn("Avoidance API failed, using mock data for demo purposes:", err);
-      setTimeout(() => {
-        // Fallback mock: Realistic Delta-V and curved trajectory
-        setAvoidResult({
-          dv: [0.012, -0.005, 0.008],
-          pc: 0.0000001
-        });
-
-        // Generate a fake escape trajectory relative to primary target
-        const mockTraj = [];
-        if (primaryTarget && primaryTarget.satrec) {
-           for (let i = 0; i <= 100; i++) {
-              const t = new Date(Date.now() + i * 60000); // 1 minute steps
-              const pv = satellite.propagate(primaryTarget.satrec, t);
-              if (pv.position && typeof pv.position !== 'boolean') {
-                 // Add 0.5km of altitude per minute as a mock maneuver drift!
-                 const drift = i * 0.5;
-                 const px = (pv.position as any).x;
-                 const py = (pv.position as any).y;
-                 const pz = (pv.position as any).z;
-                 const mag = Math.sqrt(px*px + py*py + pz*pz);
-                 const scale = (mag + drift) / mag;
-                 mockTraj.push([px * scale, py * scale, pz * scale]);
-              }
-           }
-        }
-
-        setEscapeTrajectory(mockTraj);
-        setAvoidState('complete');
-      }, 2000);
-    });
-  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-[#ffffff] font-sans relative overflow-hidden" style={{ fontFamily: 'var(--font-inter, Inter)' }}>
@@ -299,8 +241,15 @@ export default function Home() {
         {!loading && <Globe
           tleData={tleData}
           filter={filter}
-          onSelectSat={setActiveSat}
-          focusSatId={activeSat?.id || primaryTarget?.id}
+          onSelectSat={(sat) => {
+            if (activeSat?.id === sat.id) {
+              setActiveSat(null);
+            } else {
+              setActiveSat(sat);
+            }
+          }}
+          focusSatId={activeSat?.id}
+          primarySatId={primaryTarget?.id}
           secondarySatId={secondaryTarget?.id}
           timeOffsetMinutes={timeOffsetMinutes}
           escapeTrajectory={escapeTrajectory}
@@ -309,6 +258,8 @@ export default function Home() {
       </div>
 
       <AnalysisOverlay
+        primaryTarget={primaryTarget}
+        secondaryTarget={secondaryTarget}
         analysisState={analysisState}
         analysisResult={analysisResult}
         avoidState={avoidState}
@@ -323,7 +274,6 @@ export default function Home() {
           setSecondaryTarget(null);
           setShowMissionControl(false);
         }}
-        onOptimizeAvoidance={handleAvoidManeuver}
       />
 
       {/* Top Left Header (Button + Logo) */}
